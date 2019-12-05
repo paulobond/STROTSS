@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch
 from imageio import imread
+
 use_gpu = True
 
 

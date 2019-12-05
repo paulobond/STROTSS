@@ -13,7 +13,7 @@ class objective_class():
 
     def __init__(self, objective='remd_dp'):
 
-        self.z_dist = torch.zeros(1).cuda()
+        self.z_dist = utils.to_device(torch.zeros(1))
 
         self.rand_ixx = {}
         self.rand_ixy = {}
@@ -192,8 +192,8 @@ class objective_class():
         c_st = torch.cat([li.contiguous() for li in l3],1)
 
 
-        xx = torch.from_numpy(xx).cuda().view(1,1,x_st.size(2),1).float()
-        yy = torch.from_numpy(xy).cuda().view(1,1,x_st.size(2),1).float()
+        xx = utils.to_device(torch.from_numpy(xx)).view(1,1,x_st.size(2),1).float()
+        yy = utils.to_device(torch.from_numpy(xy)).view(1,1,x_st.size(2),1).float()
 
 
         x_st = torch.cat([x_st,xx,yy],1)

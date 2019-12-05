@@ -79,7 +79,7 @@ if __name__=='__main__':
 
     use_guidance_region = '-gr' in sys.argv
     use_guidance_points = False
-    use_gpu = not ('-cpu' in sys.argv)
+    use_gpu = not ('-cpu' in sys.argv) and torch.cuda.is_available()
     utils.use_gpu = use_gpu
 
 
