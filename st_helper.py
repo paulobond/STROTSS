@@ -35,7 +35,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
     #### Define feature extractor ###
     cnn = utils.to_device(Vgg16_pt())
-
     phi = lambda x: cnn.forward(x)
     phi2 = lambda x, y, z: cnn.forward_cat(x,z,samps=y,forward_func=cnn.forward)
 
@@ -61,8 +60,8 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     ### Create Objective Object ###
     objective_wrapper = 0
     objective_wrapper = objective_class(objective='remd_dp_g')
-    
 
+    ### Extract style features ###
     z_s_all = []
     for ri in range(len(regions[1])):
         z_s, style_ims = load_style_folder(phi2, paths, regions,ri, n_samps=-1, subsamps=1000, scale=long_side, inner=5)
@@ -76,12 +75,12 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
     ### Randomly choose spatial locations to extract features from ###
     if use_pyr:
+        # Reconstruct image from pyramid by successive bilinear upsampling
         stylized_im = syn_lap_pyr(s_pyr)
     else:
         stylized_im = s_pyr[0]
 
     for ri in range(len(regions[0])):
-        
 
         r_temp = regions[0][ri]
         r_temp = torch.from_numpy(r_temp).unsqueeze(0).unsqueeze(0).contiguous()

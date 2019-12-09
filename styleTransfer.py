@@ -59,7 +59,7 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
 
         canvas = F.upsample(torch.clamp(stylized_im,-0.5,0.5),(content_im.size(2),content_im.size(3)),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
         
-        ### Decrease Content Weight for next scale ###
+        ### Decrease Content Weight for next scale (alpha) ###
         content_weight = content_weight/2.0
 
     print("Finished in: ", int(time.time()-start), 'Seconds')
