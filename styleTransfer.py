@@ -18,7 +18,7 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
         content_im = utils.to_device(
             Variable(load_path_for_pytorch(content_path, long_side, force_scale=True).unsqueeze(0)))
         content_im_mean = utils.to_device(
-            Variable(load_path_for_pytorch(style_path,long_side,force_scale=True).unsqueeze(0)))\
+            Variable(load_path_for_pytorch(style_path,long_side, force_scale=True).unsqueeze(0)))\
             .mean(2, keepdim=True).mean(3, keepdim=True)
         
         # Compute bottom level of Laplacian pyramid for content image at current scale
@@ -33,9 +33,9 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
         # Otherwise bilinearly upsample previous scales output and add back bottom level of Laplacian
         # pyramid for current scale of content image
         if 1 < scl < max_scl-1:
-            stylized_im = F.upsample(stylized_im.clone(), (content_im.size(2),content_im.size(3)), mode='bilinear')+lap
+            stylized_im = F.upsample(stylized_im.clone(), (content_im.size(2), content_im.size(3)), mode='bilinear')+lap
         if scl > 3:
-            stylized_im = F.upsample(stylized_im.clone(), (content_im.size(2),content_im.size(3)), mode='bilinear')
+            stylized_im = F.upsample(stylized_im.clone(), (content_im.size(2), content_im.size(3)), mode='bilinear')
             lr = 1e-3
 
         # Style Transfer at this scale

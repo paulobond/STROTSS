@@ -18,8 +18,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     MAX_ITER = 250
     save_ind = 0
 
-    use_pyr=True
-
     temp_name = './'+output_path.split('/')[-1].split('.')[0]+'_temp.png'
 
     # Keep track of current output image for GUI
@@ -32,16 +30,10 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     phi = lambda x: cnn.forward(x)
     phi2 = lambda x, y, z: cnn.forward_cat(x,z,samps=y,forward_func=cnn.forward)
 
-    # Optimize over laplaccian pyramid instead of pixels directly
-
-    # Define Optimizer
-    if use_pyr:
-        s_pyr = dec_lap_pyr(stylized_im,5)
-        s_pyr = [Variable(li.data, requires_grad=True) for li in s_pyr]
-    else:
-        s_pyr = [Variable(stylized_im.data, requires_grad=True)]
-
-    optimizer =  optim.RMSprop(s_pyr, lr=lr)
+    # Define Optimizer (Optimize over laplacian pyramid instead of pixels directly)
+    s_pyr = dec_lap_pyr(stylized_im, 5)
+    s_pyr = [Variable(li.data, requires_grad=True) for li in s_pyr]
+    optimizer = optim.RMSprop(s_pyr, lr=lr)
 
     # Pre-Extract Content Features
     z_c = phi(content_im)
@@ -50,12 +42,13 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     paths = glob(style_path+'*')[::3]
 
     # Create Objective Object
-    objective_wrapper = objective_class(objective='remd_dp_g')
+    objective_wrapper = objective_class()
 
     # Extract style features
     z_s_all = []
     for ri in range(len(regions[1])):
-        z_s, style_ims = load_style_folder(phi2, paths, regions,ri, n_samps=-1, subsamps=1000, scale=long_side, inner=5)
+        z_s, style_ims = load_style_folder(phi2, paths, regions, ri, n_samps=-1, subsamps=1000, scale=long_side,
+                                           inner=5)
         z_s_all.append(z_s)
 
     # Extract guidance features if required
@@ -64,19 +57,17 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         gs = load_style_guidance(phi, style_path, coords[:,2:], scale=long_side)
 
     # Randomly choose spatial locations to extract features from
-    if use_pyr:
-        # Reconstruct image from pyramid by successive bilinear upsampling
-        stylized_im = syn_lap_pyr(s_pyr)
-    else:
-        stylized_im = s_pyr[0]
+    # Reconstruct image from pyramid by successive bilinear upsampling (use pyramid)
+    stylized_im = syn_lap_pyr(s_pyr)
 
     for ri in range(len(regions[0])):
+        # Initializes the random positions in objective_wrapper
 
         r_temp = regions[0][ri]
         r_temp = torch.from_numpy(r_temp).unsqueeze(0).unsqueeze(0).contiguous()
-        r = F.upsample(r_temp,(stylized_im.size(3),stylized_im.size(2)), mode='bilinear')[0, 0, :, :].numpy()
+        r = F.upsample(r_temp, (stylized_im.size(3), stylized_im.size(2)), mode='bilinear')[0, 0, :, :].numpy()
 
-        if r.max()<0.1:
+        if r.max() < 0.1:
             r = np.greater(r+1., 0.5)
         else:
             r = np.greater(r, 0.5)
@@ -90,10 +81,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
         # zero out gradients and compute output image from pyramid
         optimizer.zero_grad()
-        if use_pyr:
-            stylized_im = syn_lap_pyr(s_pyr)
-        else:
-            stylized_im = s_pyr[0]
+        stylized_im = syn_lap_pyr(s_pyr)  # use pyramid
 
         # Dramatically re-sample Large Set of Spatial Locations
         if i == 0 or i % (RESAMPLE_FREQ*10) == 0:
@@ -101,14 +89,14 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
                 
                 r_temp = regions[0][ri]
                 r_temp = torch.from_numpy(r_temp).unsqueeze(0).unsqueeze(0).contiguous()
-                r = F.upsample(r_temp,(stylized_im.size(3),stylized_im.size(2)),mode='bilinear')[0,0,:,:].numpy()        
+                r = F.upsample(r_temp, (stylized_im.size(3), stylized_im.size(2)), mode='bilinear')[0, 0, :, :].numpy()
 
-                if r.max()<0.1:
-                    r = np.greater(r+1.,0.5)
+                if r.max() < 0.1:
+                    r = np.greater(r+1., 0.5)
                 else:
-                    r = np.greater(r,0.5)
+                    r = np.greater(r, 0.5)
 
-                objective_wrapper.init_inds(z_c, z_s_all,r,ri)
+                objective_wrapper.init_inds(z_c, z_s_all, r, ri)
 
         # Subsample spatial locations to compute loss over
         if i == 0 or i % RESAMPLE_FREQ == 0:
@@ -118,7 +106,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         z_x = phi(stylized_im)
 
         # Compute Objective and take gradient step
-        ell = objective_wrapper.eval(z_x, z_c, z_s_all, gs, 0., content_weight=content_weight,moment_weight=1.0)
+        ell = objective_wrapper.eval(z_x, z_c, z_s_all, gs, content_weight=content_weight, moment_weight=1.0)
 
         ell.backward()
         optimizer.step()
