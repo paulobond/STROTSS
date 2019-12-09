@@ -1,5 +1,6 @@
 from st_helper import *
 from utils import *
+import torch.nn.functional as F
 
 
 def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance, regions,
@@ -14,13 +15,16 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
         lr = 2e-3
 
         # Load Style and Content Image
-        content_im = utils.to_device(Variable(load_path_for_pytorch(content_path,long_side,force_scale=True).unsqueeze(0)))
-        content_im_mean = utils.to_device(Variable(load_path_for_pytorch(style_path,long_side,force_scale=True).unsqueeze(0))).mean(2,keepdim=True).mean(3,keepdim=True)
+        content_im = utils.to_device(
+            Variable(load_path_for_pytorch(content_path, long_side, force_scale=True).unsqueeze(0)))
+        content_im_mean = utils.to_device(
+            Variable(load_path_for_pytorch(style_path,long_side,force_scale=True).unsqueeze(0)))\
+            .mean(2, keepdim=True).mean(3, keepdim=True)
         
         # Compute bottom level of Laplacian pyramid for content image at current scale
-        lap = content_im.clone() - \
-              F.upsample(F.upsample(content_im,(content_im.size(2)//2, content_im.size(3)//2), mode='bilinear'),
-                                            (content_im.size(2), content_im.size(3)), mode='bilinear')
+        lap = content_im.clone() -\
+              F.upsample(F.upsample(content_im, (content_im.size(2)//2, content_im.size(3)//2), mode='bilinear'),
+                         (content_im.size(2), content_im.size(3)), mode='bilinear')
 
         # Initialize by zeroing out all but highest and lowest levels of Laplacian Pyramid #
         stylized_im = None
@@ -71,7 +75,7 @@ if __name__=='__main__':
     coords=0.
     if use_guidance_region:
         i = sys.argv.index('-gr')
-        regions = utils.extract_regions(sys.argv[i+1],sys.argv[i+2])
+        regions = utils.extract_regions(sys.argv[i+1], sys.argv[i+2])
     else:
         try:
             regions = [[imread(content_path)[:, :, 0]*0.+1.], [imread(style_path)[:, :, 0]*0.+1.]]
