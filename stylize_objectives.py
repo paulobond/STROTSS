@@ -38,15 +38,13 @@ class objective_class():
 
             # Reshape Features from Style Distribution ##
             d = z_s[ri][0].size(1)
-            z_st = z_s[ri][0].view(1,d,-1,1)
+            z_st = z_s[ri][0].view(1, d, -1, 1)
 
             # Compute Content Loss
-
-            fm = 3+2*64+128*2+256*3+512*2
-
             ell_content = content_loss_func(x_st[:, :, :, :], c_st[:, :, :, :])
 
             # Compute Style Loss
+            fm = 3+2*64+128*2+256*3+512*2
             remd_loss, used_style_feats = style_loss_func(x_st[:, :fm, :, :], z_st[:, :fm, :, :],
                                                           self.z_dist, splits=[fm])
 
@@ -145,7 +143,7 @@ class objective_class():
         l2 = []
         l3 = []
 
-        for i in range(len(z_x)):
+        for i in range(len(z_x)):  # = 10
 
             temp = z_x[i]
             temp2 = z_c[i]
