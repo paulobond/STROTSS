@@ -1,5 +1,4 @@
 import time
-import math
 import sys
 
 import torch
@@ -18,9 +17,6 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
     smll_sz = 64
     
     start = time.time()
-
-    content_im_big = utils.to_device(Variable(load_path_for_pytorch(content_path,512,force_scale=True).unsqueeze(0)))
-
     for scl in range(1,max_scl):
 
         long_side = smll_sz*(2**(scl-1))
@@ -32,19 +28,10 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
         
         ### Compute bottom level of laplaccian pyramid for content image at current scale ###
         lap = content_im.clone()-F.upsample(F.upsample(content_im,(content_im.size(2)//2,content_im.size(3)//2),mode='bilinear'),(content_im.size(2),content_im.size(3)),mode='bilinear')
-        nz = torch.normal(lap*0.,0.1)
-
-        canvas = F.upsample(torch.clamp(lap,-0.5,0.5),(content_im_big.size(2),content_im_big.size(3)),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
-
-        if scl == 1:
-            canvas = F.upsample(content_im,(content_im.size(2)//2,content_im.size(3)//2),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
 
         ### Initialize by zeroing out all but highest and lowest levels of Laplaccian Pyramid ###
         if scl == 1:
-            if 1:
-                stylized_im = Variable(content_im_mean+lap)
-            else:
-                stylized_im = Variable(content_im.data)
+            stylized_im = Variable(content_im_mean + lap)
 
         ### Otherwise bilinearly upsample previous scales output and add back bottom level of Laplaccian pyramid for current scale of content image ###
         if scl > 1 and scl < max_scl-1:
@@ -56,8 +43,6 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
 
         ### Style Transfer at this scale ###
         stylized_im, final_loss = style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, 0., use_guidance=use_guidance, coords=coords, content_weight=content_weight, lr=lr, regions=regions)
-
-        canvas = F.upsample(torch.clamp(stylized_im,-0.5,0.5),(content_im.size(2),content_im.size(3)),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
         
         ### Decrease Content Weight for next scale ###
         content_weight = content_weight/2.0

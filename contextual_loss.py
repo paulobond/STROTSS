@@ -1,8 +1,6 @@
 import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
-import numpy as np
-import time
 import utils
 
 def pairwise_distances_sq_l2(x, y):
@@ -26,26 +24,24 @@ def pairwise_distances_cos(x, y):
 
     return dist
 
-def get_DMat(X,Y,h=1.0,cb=0,splits=[128*3+256*3+512*4], cos_d=True):
+
+def get_DMat(X, Y, h=1.0, splits=[128 * 3 + 256 * 3 + 512 * 4], cos_d=True):
     n = X.size(0)
     m = Y.size(0)
     M = utils.to_device(Variable(torch.zeros(n,m)))
 
+    cb = 0
+    for i in range(len(splits)):
+        if cos_d:
+            ce = cb + splits[i]
+            M = M + pairwise_distances_cos(X[:, cb:ce], Y[:, cb:ce])
 
-    if 1:
-        cb = 0
-        ce = 0
-        for i in range(len(splits)):
-            if cos_d:
-                ce = cb + splits[i]
-                M = M + pairwise_distances_cos(X[:,cb:ce],Y[:,cb:ce])
-            
-                cb = ce
-            else:
-                ce = cb + splits[i]
-                M = M + torch.sqrt(pairwise_distances_sq_l2(X[:,cb:ce],Y[:,cb:ce]))
-            
-                cb = ce
+            cb = ce
+        else:
+            ce = cb + splits[i]
+            M = M + torch.sqrt(pairwise_distances_sq_l2(X[:, cb:ce], Y[:, cb:ce]))
+
+            cb = ce
 
     return M
 
@@ -71,7 +67,6 @@ def viz_d(zx,coords):
         viz = torch.max(viz,vizt/torch.max(vizt))
 
     vis_o = viz.clone()
-    viz = viz.data.cpu().numpy()[0,0,:,:]/len(zx)
     return vis_o
 
 def remd_loss(X,Y, h=None, cos_d=True, splits= [3+64+64+128+128+256+256+256+512+512],return_mat=False):
@@ -146,11 +141,6 @@ def remd_loss_g(X,Y, GX, GY, h=1.0, splits= [3+64+64+128+128+256+256+256+512+512
     m2,m2_inds = CX_M.min(0)
     m2,min_inds = torch.topk(m2,m1.size(0),largest=False)
 
-    if m1.mean() > m2.mean():
-        used_style_feats = Y[m1_inds,:]
-    else:
-        used_style_feats = Y[min_inds,:]
-
     m12,_ = CX_M_2.min(1)
     m22,_ = CX_M_2.min(0)
 
@@ -171,7 +161,6 @@ def moment_loss(X,Y,moments=[1,2]):
     splits = [Xo.size(1)]
 
     cb = 0
-    ce = 0
     for i in range(len(splits)):
         ce = cb + splits[i]
         X = Xo[:,cb:ce]
@@ -216,7 +205,6 @@ def moment_loss_g(X,Y,GX,moments=[1,2]):
 
     splits = [Xo.size(1)]
     cb = 0
-    ce = 0
     for i in range(len(splits)):
         ce = cb + splits[i]
         X = Xo[:,cb:ce]
@@ -226,7 +214,6 @@ def moment_loss_g(X,Y,GX,moments=[1,2]):
         mu_x = torch.sum(betas*X,0,keepdim=True)/torch.sum(betas)
         mu_y = torch.mean(Y,0,keepdim=True)
         mu_d = torch.abs(mu_x-mu_y).mean()
-
 
 
         if 1 in moments:
@@ -250,15 +237,10 @@ def dp_loss(X,Y):
     X = X.transpose(0,1).contiguous().view(d,-1).transpose(0,1)
     Y = Y.transpose(0,1).contiguous().view(d,-1).transpose(0,1)
 
-    Xc = X[:,-2:]
     Y = Y[:,:-2]
     X = X[:,:-2]
 
-    if 0:
-        dM = torch.exp(-2.*get_DMat(Xc,Xc,1., cos_d=False))
-        dM = dM/dM.sum(0,keepdim=True).detach()*dM.size(0)
-    else:
-        dM = 1.
+    dM = 1.
 
     Mx = get_DMat(X,X,1.,cos_d=True,splits=[X.size(1)])
     Mx = Mx/Mx.sum(0,keepdim=True)
@@ -271,8 +253,7 @@ def dp_loss(X,Y):
     return d
 
 
-
-
+# Pas utilisée?
 def dp_loss_g(X,Y,GX):
 
     d = X.size(1)

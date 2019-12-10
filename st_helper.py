@@ -1,15 +1,9 @@
-import time
-import math
-import sys
 from glob import glob
-import shutil
-
 import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
 import torch.optim as optim
 from imageio import imread, imwrite
-
 import utils
 from utils import *
 from vgg_pt import *
@@ -20,7 +14,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
     REPORT_INTERVAL = 100
     RESAMPLE_FREQ = 1
-    RESAMPLE_INCREASE_FREQ = 150
     MAX_ITER = 250
     save_ind = 0
 
@@ -59,7 +52,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     paths = glob(style_path+'*')[::3]
 
     ### Create Objective Object ###
-    objective_wrapper = 0
     objective_wrapper = objective_class(objective='remd_dp_g')
     
 
