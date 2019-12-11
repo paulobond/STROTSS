@@ -38,6 +38,13 @@ def aug_canvas(canvas, scale, s_iter):
     h = int(h*frac)
     w = int(w*frac)
 
+    prg = 0.
+    if scale < 4:
+        prg = (scale-1)*0.21+s_iter/250.*0.21
+    else:
+        prg = 0.63+s_iter/250.*0.37
+    prg = int(prg*100.)
+
     canvas = F.upsample(canvas,(h,w),mode='bilinear').cpu()
 
     canvas = torch.clamp(canvas[0],-0.5,0.5).data.numpy().transpose(1,2,0)
@@ -209,6 +216,7 @@ def load_path_for_pytorch(path, max_side=1000, force_scale=False, verbose=True):
     s = x.shape
 
     x = x/255.-0.5
+    xt = x.copy()
     
     if len(s) < 3:
         x = np.stack([x,x,x],2)
@@ -290,14 +298,15 @@ def load_style_guidance(phi,path,coords_t,scale):
 
     return gz
 
-def load_style_folder(phi, paths, regions, ri, n_samps=-1,subsamps=-1,scale=-1, inner=1, cpu_mode=False):
+
+def load_style_folder(phi, paths, regions, ri, n_samps=-1, subsamps=-1, scale=-1, inner=1):
 
     if n_samps > 0:
         list.sort(paths)
         paths = paths[::max((len(paths)//n_samps),1)]
     else:
         pass
-
+        
     z = []
     z_ims = []
     nloaded = 0
@@ -312,7 +321,7 @@ def load_style_folder(phi, paths, regions, ri, n_samps=-1,subsamps=-1,scale=-1, 
             r_temp = r_temp[:,:,0]
 
         r_temp = torch.from_numpy(r_temp).unsqueeze(0).unsqueeze(0).contiguous()
-        r = F.upsample(r_temp,(style_im.size(3),style_im.size(2)),mode='bilinear')[0,0,:,:].numpy()        
+        r = F.upsample(r_temp,(style_im.size(3),style_im.size(2)),mode='bilinear')[0,0,:,:].numpy()
         sts = [style_im]
 
         z_ims.append(style_im)
@@ -322,9 +331,9 @@ def load_style_folder(phi, paths, regions, ri, n_samps=-1,subsamps=-1,scale=-1, 
             style_im = sts[np.random.randint(0,len(sts))]
             
             with torch.no_grad():
-                zt = phi(style_im,subsamps,r)
+                zt = phi(style_im, subsamps, r)
                 
-            zt = [li.view(li.size(0),li.size(1),-1,1) for li in zt]
+            zt = [li.view(li.size(0), li.size(1), -1, 1) for li in zt]
 
             if len(z) == 0:
                 z = zt

@@ -28,7 +28,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     # Define feature extractor
     cnn = utils.to_device(Vgg16_pt())
     phi = lambda x: cnn.forward(x)
-    phi2 = lambda x, y, z: cnn.forward_cat(x,z,samps=y,forward_func=cnn.forward)
+    phi2 = lambda x, y, z: cnn.forward_cat(x, z, samps=y, forward_func=cnn.forward)
 
     # Define Optimizer (Optimize over laplacian pyramid instead of pixels directly)
     s_pyr = dec_lap_pyr(stylized_im, 5)
@@ -46,7 +46,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
     # Extract style features
     z_s_all = []
-    for ri in range(len(regions[1])):
+    for ri in range(len(regions[1])):  # = number of style images = 1
         z_s, style_ims = load_style_folder(phi2, paths, regions, ri, n_samps=-1, subsamps=1000, scale=long_side,
                                            inner=5)
         z_s_all.append(z_s)
@@ -60,7 +60,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     # Reconstruct image from pyramid by successive bilinear upsampling (use pyramid)
     stylized_im = syn_lap_pyr(s_pyr)
 
-    for ri in range(len(regions[0])):
+    for ri in range(len(regions[0])):  # = number of content images?
         # Initializes the random positions in objective_wrapper
 
         r_temp = regions[0][ri]
