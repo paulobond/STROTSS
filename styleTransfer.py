@@ -2,6 +2,9 @@ import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+import sys
+import time
+
 from st_helper import *
 from utils import *
 
@@ -68,6 +71,7 @@ if __name__=='__main__':
     use_guidance_region = '-gr' in sys.argv
     use_guidance_points = False
     use_gpu = not ('-cpu' in sys.argv) and torch.cuda.is_available()
+    print("Use GPU:  " + str(use_gpu))
     utils.use_gpu = use_gpu
 
     paths = glob(style_path+'*')
@@ -75,6 +79,13 @@ if __name__=='__main__':
     ims = []
 
     palette_content = '-orgclr' in sys.argv
+
+    if '-output' in sys.argv:
+        output_path = sys.argv[sys.argv.index('-output') + 1]
+    else:
+        output_path = './output.png'
+
+    './output.png'
 
     # Preprocess User Guidance if Required
     coords=0.
@@ -89,4 +100,4 @@ if __name__=='__main__':
 
     # Style Transfer and save output
     loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points, regions,
-                          palette_content=palette_content)
+                          palette_content=palette_content, output_path=output_path)
