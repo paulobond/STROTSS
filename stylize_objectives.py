@@ -21,7 +21,7 @@ class objective_class():
 
         self.eval = self.gen_remd_dp_objective_guided
 
-    def gen_remd_dp_objective_guided(self, z_x, z_c, z_s, gz, content_weight=4.0,
+    def gen_remd_dp_objective_guided(self, z_x, z_x_lower_layers_only, z_c, z_s, gz, content_weight=4.0,
                                      moment_weight=1.0, style_loss_func=remd_loss, content_loss_func=dp_loss,
                                      palette_content=False):
 
@@ -30,7 +30,10 @@ class objective_class():
         final_loss = 0.
         for ri in range(len(self.rand_ixx.keys())):
             xx, xy, yx = self.get_feature_inds(ri=ri)
-            x_st, c_st = self.spatial_feature_extract(z_x, z_c, xx, xy)
+
+            x_st, c_st = self.spatial_feature_extract(z_x if not z_x_lower_layers_only else z_x_lower_layers_only,
+                                                      z_c, xx, xy)
+            x_st_all_layers = x_st if not z_x_lower_layers_only else self.spatial_feature_extract_bis(z_x, xx, xy)
 
             if gz.sum() > 0.:
                 gxx, gxy = self.get_feature_inds_g()
@@ -45,7 +48,7 @@ class objective_class():
 
             # Compute Style Loss
             fm = 3+2*64+128*2+256*3+512*2
-            remd_loss, used_style_feats = style_loss_func(x_st[:, :fm, :, :], z_st[:, :fm, :, :],
+            remd_loss, used_style_feats = style_loss_func(x_st_all_layers[:, :fm, :, :], z_st[:, :fm, :, :],
                                                           self.z_dist, splits=[fm])
 
             if gz.sum() > 0.:
@@ -55,10 +58,10 @@ class objective_class():
 
             # Compute Moment Loss (constrains magnitude of features)
             if gz.sum() > 0.:
-                moment_ell = moment_loss(torch.cat([x_st, gx_st], 2)[:, :-2, :, :],
+                moment_ell = moment_loss(torch.cat([x_st_all_layers, gx_st], 2)[:, :-2, :, :],
                                          torch.cat([z_st, gz], 2), moments=[1, 2])
             else:
-                moment_ell = moment_loss(x_st[:,:-2,:,:],z_st,moments=[1,2])
+                moment_ell = moment_loss(x_st_all_layers[:, :-2, :, :], z_st, moments=[1, 2])
 
             # Add palette Matching Loss
             content_weight_frac = 1./max(content_weight, 1.)
@@ -67,7 +70,7 @@ class objective_class():
                 moment_ell += content_weight_frac * style_loss_func(x_st[:, :3, :, :], c_st[:, :3, :, :],
                                                                     self.z_dist, splits=[3])[0]
             else:  # Use style image palette
-                moment_ell += content_weight_frac * style_loss_func(x_st[:, :3, :, :], z_st[:, :3, :, :],
+                moment_ell += content_weight_frac * style_loss_func(x_st_all_layers[:, :3, :, :], z_st[:, :3, :, :],
                                                                     self.z_dist, splits=[3])[0]
 
             # Combine Terms and Normalize
@@ -195,6 +198,55 @@ class objective_class():
         c_st = torch.cat([c_st,xx,yy],1)
 
         return x_st, c_st
+
+    def spatial_feature_extract_bis(self, z, xx, xy):
+        """
+        Used when lower_layers_only=True
+        """
+
+        l2 = []
+
+        for i in range(len(z)):  # = 10
+
+            temp = z[i]
+
+            if i > 0 and z[i - 1].size(2) > z[i].size(2):
+                xx = xx / 2.0
+                xy = xy / 2.0
+
+            xxm = np.floor(xx).astype(np.float32)
+            xxr = xx - xxm
+
+            xym = np.floor(xy).astype(np.float32)
+            xyr = xy - xym
+
+            w00 = utils.to_device(torch.from_numpy((1. - xxr) * (1. - xyr))).float().unsqueeze(0).unsqueeze(
+                1).unsqueeze(3)
+            w01 = utils.to_device(torch.from_numpy((1. - xxr) * xyr)).float().unsqueeze(0).unsqueeze(1).unsqueeze(3)
+            w10 = utils.to_device(torch.from_numpy(xxr * (1. - xyr))).float().unsqueeze(0).unsqueeze(1).unsqueeze(3)
+            w11 = utils.to_device(torch.from_numpy(xxr * xyr)).float().unsqueeze(0).unsqueeze(1).unsqueeze(3)
+
+            xxm = np.clip(xxm.astype(np.int32), 0, temp.size(2) - 1)
+            xym = np.clip(xym.astype(np.int32), 0, temp.size(3) - 1)
+
+            s00 = xxm * temp.size(3) + xym
+            s01 = xxm * temp.size(3) + np.clip(xym + 1, 0, temp.size(3) - 1)
+            s10 = np.clip(xxm + 1, 0, temp.size(2) - 1) * temp.size(3) + xym
+            s11 = np.clip(xxm + 1, 0, temp.size(2) - 1) * temp.size(3) + np.clip(xym + 1, 0, temp.size(3) - 1)
+
+            temp = temp.view(1, temp.size(1), temp.size(2) * temp.size(3), 1)
+            temp = temp[:, :, s00, :].mul_(w00).add_(temp[:, :, s01, :].mul_(w01)).add_(
+                temp[:, :, s10, :].mul_(w10)).add_(temp[:, :, s11, :].mul_(w11))
+
+            l2.append(temp)
+
+        x_st = torch.cat([li.contiguous() for li in l2], 1)
+        xx = utils.to_device(torch.from_numpy(xx)).view(1, 1, x_st.size(2), 1).float()
+        yy = utils.to_device(torch.from_numpy(xy)).view(1, 1, x_st.size(2), 1).float()
+
+        x_st = torch.cat([x_st, xx, yy], 1)
+
+        return x_st
 
     def shuffle_feature_inds(self, i=0):
         global use_random
