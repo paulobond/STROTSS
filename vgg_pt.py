@@ -11,6 +11,7 @@ use_random = True
 
 class Vgg16_pt(torch.nn.Module):
     def __init__(self, requires_grad=False):
+
         super(Vgg16_pt, self).__init__()
         vgg_pretrained_features = models.vgg16(pretrained=True).features
         self.vgg_layers = vgg_pretrained_features
@@ -32,33 +33,31 @@ class Vgg16_pt(torch.nn.Module):
 
         self.inds = range(11)
 
-    def forward_base(self, X):
+    def forward(self, X, lower_layers_only=False):
 
         x = X
         l2 = [X]
+
+        # could add 18, 20, 22, 25, 27
+        layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if not lower_layers_only else [1]
+
         for i in range(30):
             try:
                 x = self.vgg_layers[i].forward(x)  # [:,:,1:-1,1:-1]
-
             except:
                 pass
-
-            if i in [1, 3, 6, 8, 11, 13, 15, 22, 29]:
+            if i in layers:
                 l2.append(x)
 
         return l2
 
-    def forward(self, X):
-        l2 = self.forward_base(X)
-        return l2
-
-    def forward_cat(self, X, r, samps=100, forward_func=None):
+    def forward_cat(self, X, r, samps=100, forward_func=None, lower_layers_only=False):
 
         if not forward_func:
             forward_func = self.forward
 
         x = X
-        out2 = forward_func(X)
+        out2 = forward_func(X, lower_layers_only=lower_layers_only)
 
         try:
             r = r[:, :, 0]
@@ -70,7 +69,7 @@ class Vgg16_pt(torch.nn.Module):
         else:
             region_mask = np.greater(r.flatten(), 0.5)
 
-        xx,xy = np.meshgrid(np.array(range(x.size(2))), np.array(range(x.size(3))) )
+        xx,xy = np.meshgrid(np.array(range(x.size(2))), np.array(range(x.size(3))))
         xx = np.expand_dims(xx.flatten(), 1)
         xy = np.expand_dims(xy.flatten(), 1)
         xc = np.concatenate([xx,xy], 1)
@@ -93,26 +92,26 @@ class Vgg16_pt(torch.nn.Module):
 
             temp = out2[i]
 
-            if i>0 and out2[i].size(2) < out2[i-1].size(2):
+            if i > 0 and out2[i].size(2) < out2[i-1].size(2):
                 xx = xx/2.0
                 yy = yy/2.0
 
             xx = np.clip(xx, 0, temp.size(2)-1).astype(np.int32)
             yy = np.clip(yy, 0, temp.size(3)-1).astype(np.int32)
 
-            temp_list = [ temp[:, :, xx[j], yy[j]].unsqueeze(2).unsqueeze(3) for j in range(const2)]
+            temp_list = [temp[:, :, xx[j], yy[j]].unsqueeze(2).unsqueeze(3) for j in range(const2)]
             temp = torch.cat(temp_list, 2)
 
             l2.append(temp.clone().detach())
 
-        out2 = [torch.cat([li.contiguous() for li in l2],1)]
+        out2 = [torch.cat([li.contiguous() for li in l2], 1)]
 
         return out2
 
-    def forward_diff(self, X):
+    def forward_diff(self, X, lower_layers_only=False):
 
         inds = self.inds
-        l2 = self.forward_base(X)
+        l2 = self.forward(X, lower_layers_only=lower_layers_only)
 
         out2 = [l2[i].contiguous() for i in inds]
 
