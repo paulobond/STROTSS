@@ -1,12 +1,9 @@
-from collections import namedtuple
-import random
 import ssl
 
-import torch.nn.functional as F
-from torch.autograd import Variable
-import torch
-from torchvision import models
 import numpy as np
+import torch
+import torch.nn.functional as F
+from torchvision import models
 
 ssl._create_default_https_context = ssl._create_unverified_context
 use_random = True

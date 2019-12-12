@@ -1,10 +1,13 @@
+import torch
+import torch.nn.functional as F
+from torch.autograd import Variable
+
 from st_helper import *
 from utils import *
-import torch.nn.functional as F
 
 
 def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance, regions,
-           output_path='./output.png'):
+           output_path='./output.png', palette_content=False):
 
     smll_sz = 64
     start = time.time()
@@ -27,7 +30,6 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
                          (content_im.size(2), content_im.size(3)), mode='bilinear')
 
         # Initialize by zeroing out all but highest and lowest levels of Laplacian Pyramid #
-        stylized_im = None
         if scl == 1:
             stylized_im = Variable(content_im_mean+lap)
         # Otherwise bilinearly upsample previous scales output and add back bottom level of Laplacian
@@ -41,7 +43,8 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
         # Style Transfer at this scale
         stylized_im, final_loss = style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, 0.,
                                                  use_guidance=use_guidance, coords=coords,
-                                                 content_weight=content_weight, lr=lr, regions=regions)
+                                                 content_weight=content_weight, lr=lr, regions=regions,
+                                                 palette_content=palette_content)
 
         # Decrease Content Weight for next scale (alpha)
         content_weight = content_weight/2.0
@@ -71,6 +74,8 @@ if __name__=='__main__':
     losses = []
     ims = []
 
+    palette_content = '-orgclr' in sys.argv
+
     # Preprocess User Guidance if Required
     coords=0.
     if use_guidance_region:
@@ -83,4 +88,5 @@ if __name__=='__main__':
             regions = [[imread(content_path)[:, :]*0.+1.], [imread(style_path)[:, :]*0.+1.]]
 
     # Style Transfer and save output
-    loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points, regions)
+    loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points, regions,
+                          palette_content=palette_content)

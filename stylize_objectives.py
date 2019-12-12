@@ -1,11 +1,10 @@
 import math
 
+import numpy as np
 import torch
-from torch.autograd import Variable
-import torch.nn.functional as F
 
-from contextual_loss import *
 import utils
+from contextual_loss import *
 
 use_random = True
 
@@ -23,7 +22,8 @@ class objective_class():
         self.eval = self.gen_remd_dp_objective_guided
 
     def gen_remd_dp_objective_guided(self, z_x, z_c, z_s, gz, content_weight=4.0,
-                                     moment_weight=1.0, style_loss_func=remd_loss, content_loss_func=dp_loss):
+                                     moment_weight=1.0, style_loss_func=remd_loss, content_loss_func=dp_loss,
+                                     palette_content=False):
 
         # Extract Random Subset of Features from Stylized Image & Content Image #
         # (Choose Features from Same locations in Stylized Image & Content Image) #
@@ -61,9 +61,14 @@ class objective_class():
                 moment_ell = moment_loss(x_st[:,:-2,:,:],z_st,moments=[1,2])
 
             # Add palette Matching Loss
-            content_weight_frac = 1./max(content_weight,1.)
-            moment_ell += content_weight_frac*style_loss_func(x_st[:, :3, :, :], z_st[:, :3, :, :],
-                                                              self.z_dist, splits=[3])[0]
+            content_weight_frac = 1./max(content_weight, 1.)
+
+            if palette_content:  # Use content image palette
+                moment_ell += content_weight_frac * style_loss_func(x_st[:, :3, :, :], c_st[:, :3, :, :],
+                                                                    self.z_dist, splits=[3])[0]
+            else:  # Use style image palette
+                moment_ell += content_weight_frac * style_loss_func(x_st[:, :3, :, :], z_st[:, :3, :, :],
+                                                                    self.z_dist, splits=[3])[0]
 
             # Combine Terms and Normalize
             ell_style = remd_loss+moment_weight*moment_ell

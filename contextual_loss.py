@@ -104,7 +104,7 @@ def remd_loss(X,Y, h=None, cos_d=True, splits= [3+64+64+128+128+256+256+256+512+
 
 
 
-def remd_loss_g(X,Y, GX, GY, h=1.0, splits= [3+64+64+128+128+256+256+256+512+512]):
+def remd_loss_g(X, Y, GX, GY, h=1.0, splits= [3+64+64+128+128+256+256+256+512+512]):
 
     d = X.size(1)
 

@@ -1,7 +1,10 @@
 from glob import glob
 
+import torch
+import torch.nn.functional as F
 import torch.optim as optim
 from imageio import imwrite
+from torch.autograd import Variable
 
 import utils
 from pyr_lap import *
@@ -11,7 +14,7 @@ from vgg_pt import *
 
 
 def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, mask, content_weight=0.,
-                   use_guidance=False, regions=0, coords=0, lr=2e-3):
+                   use_guidance=False, regions=0, coords=0, lr=2e-3, palette_content=False):
 
     REPORT_INTERVAL = 100
     RESAMPLE_FREQ = 1
@@ -106,7 +109,8 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         z_x = phi(stylized_im)
 
         # Compute Objective and take gradient step
-        ell = objective_wrapper.eval(z_x, z_c, z_s_all, gs, content_weight=content_weight, moment_weight=1.0)
+        ell = objective_wrapper.eval(z_x, z_c, z_s_all, gs, content_weight=content_weight, moment_weight=1.0,
+                                     palette_content=palette_content)
 
         ell.backward()
         optimizer.step()
