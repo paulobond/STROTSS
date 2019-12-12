@@ -39,7 +39,7 @@ class Vgg16_pt(torch.nn.Module):
         l2 = [X]
 
         # could add 18, 20, 22, 25, 27
-        layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if not lower_layers_only else [1, 3, 6, 8]
+        layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if not lower_layers_only else [1]
 
         for i in range(30):
             try:
