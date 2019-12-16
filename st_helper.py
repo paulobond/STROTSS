@@ -25,12 +25,12 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     MAX_ITER = 250
     save_ind = 0
 
-    temp_name = './'+output_path.split('/')[-1].split('.')[0]+'_temp.png'
+    temp_name = './'+output_path.split('/')[-1].split('.')[0]+f'_temp_{scl}.png'
 
     # Keep track of current output image for GUI
     canvas = aug_canvas(stylized_im, scl, 0)
     imwrite(temp_name, canvas)
-    shutil.move(temp_name, output_path)
+    # shutil.move(temp_name, output_path)
 
     # Define feature extractor
     cnn = utils.to_device(Vgg16_pt())
