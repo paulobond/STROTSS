@@ -45,6 +45,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
     # Pre-Extract Content Features
     z_c = phi(content_im) if not lower_layers_only else phi_lower_layers_only(content_im)
+    print(f"Extract content features. Using lower layers only: {lower_layers_only}. Len of z_c: {len(z_c)}")
 
     # Pre-Extract Style Features from a Folder
     paths = glob(style_path+'*')[::3]
