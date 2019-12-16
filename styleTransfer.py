@@ -56,7 +56,7 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
     print('Final Loss:', final_loss)
 
     canvas = torch.clamp(stylized_im[0], -0.5, 0.5).data.cpu().numpy().transpose(1, 2, 0)
-    imwrite(output_path, canvas)
+    # imwrite(output_path, canvas)
     return final_loss, stylized_im
 
 
