@@ -127,7 +127,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         if (i+1) % 10 == 0:
             canvas = aug_canvas(stylized_im, scl, i)
             imwrite(temp_name, canvas)
-            shutil.move(temp_name, output_path)
+            # shutil.move(temp_name, output_path)
 
         # Periodically Report Loss and Save Current Image
         if (i+1) % REPORT_INTERVAL == 0:
