@@ -42,7 +42,7 @@ class Vgg16_pt(torch.nn.Module):
         if content_layer_index == 0:
             layers = []
         else:
-            layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if content_layer_index is None else [1, 3, 6, 8, 11, 13, 15, 22, 29][:content_layer_index-1]
+            layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if content_layer_index is None else [1, 3, 6, 8, 11, 13, 15, 22, 29][:content_layer_index]
 
         for i in range(30):
             try:
