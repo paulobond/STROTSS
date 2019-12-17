@@ -52,13 +52,13 @@ class Vgg16_pt(torch.nn.Module):
 
         return l2
 
-    def forward_cat(self, X, r, samps=100, forward_func=None, lower_layers_only=False):
+    def forward_cat(self, X, r, samps=100, forward_func=None):
 
         if not forward_func:
             forward_func = self.forward
 
         x = X
-        out2 = forward_func(X, lower_layers_only=lower_layers_only)
+        out2 = forward_func(X)
 
         try:
             r = r[:, :, 0]
@@ -109,10 +109,10 @@ class Vgg16_pt(torch.nn.Module):
 
         return out2
 
-    def forward_diff(self, X, lower_layers_only=False):
+    def forward_diff(self, X):
 
         inds = self.inds
-        l2 = self.forward(X, lower_layers_only=lower_layers_only)
+        l2 = self.forward(X)
 
         out2 = [l2[i].contiguous() for i in inds]
 
