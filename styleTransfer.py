@@ -101,10 +101,10 @@ if __name__=='__main__':
 
     # Style Transfer and save output
 
-    for content_layer_index in range(10):
+    for param in [0.1, 0.3, 0.5, 0.7, 1, 1.5]:
 
-        print(f"Using layer with index up to {content_layer_index} for content")
-        output_path = f'./content_layer_index_up_to_{content_layer_index}.png'
-        loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points, regions,
+        print(f"Using param {param}")
+        output_path = f'./content_weight_{param}.png'
+        loss, canvas = run_st(content_path, style_path, param, max_scl, coords, use_guidance_points, regions,
                               palette_content=palette_content,
-                              output_path=output_path, content_layer_index=content_layer_index)
+                              output_path=output_path, content_layer_index=None)
