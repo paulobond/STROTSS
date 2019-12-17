@@ -10,7 +10,7 @@ from utils import *
 
 
 def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance, regions,
-           output_path='./output.png', palette_content=False, lower_layers_only=False):
+           output_path='./output.png', palette_content=False, content_layer_index=None):
 
     smll_sz = 64
     start = time.time()
@@ -47,7 +47,8 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
         stylized_im, final_loss = style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, 0.,
                                                  use_guidance=use_guidance, coords=coords,
                                                  content_weight=content_weight, lr=lr, regions=regions,
-                                                 palette_content=palette_content, lower_layers_only=lower_layers_only)
+                                                 palette_content=palette_content,
+                                                 content_layer_index=content_layer_index)
 
         # Decrease Content Weight for next scale (alpha)
         content_weight = content_weight/2.0
@@ -79,12 +80,6 @@ if __name__=='__main__':
     ims = []
 
     palette_content = '-orgclr' in sys.argv
-    content_loss_lower_layers_only = '-ctllo' in sys.argv
-
-    if content_loss_lower_layers_only:
-        print("******** EXPERIMENT: USING LOWER LAYERS ONLY TO COMPUTE CONTENT LOSS **********")
-    else:
-        print("******** USING ALL LAYERS TO COMPUTE CONTENT LOSS AND STYLE LOSS **********")
 
     if '-output' in sys.argv:
         output_path = sys.argv[sys.argv.index('-output') + 1]
@@ -105,6 +100,11 @@ if __name__=='__main__':
             regions = [[imread(content_path)[:, :]*0.+1.], [imread(style_path)[:, :]*0.+1.]]
 
     # Style Transfer and save output
-    loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points, regions,
-                          palette_content=palette_content, lower_layers_only=content_loss_lower_layers_only,
-                          output_path=output_path)
+
+    for content_layer_index in range(10):
+
+        print(f"Using layer with index {content_layer_index} for content")
+        output_path = f'./content_layer_index_{content_layer_index}.png'
+        loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points, regions,
+                              palette_content=palette_content,
+                              output_path=output_path, content_layer_index=content_layer_index)

@@ -18,7 +18,7 @@ from vgg_pt import *
 
 def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, mask, content_weight=0.,
                    use_guidance=False, regions=0, coords=0, lr=2e-3, palette_content=False,
-                   lower_layers_only=False):
+                   content_layer_index=None):
 
     REPORT_INTERVAL = 100
     RESAMPLE_FREQ = 1
@@ -30,13 +30,13 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     # Keep track of current output image for GUI
     canvas = aug_canvas(stylized_im, scl, 0)
     imwrite(temp_name, canvas)
-    # shutil.move(temp_name, output_path)
+    shutil.move(temp_name, output_path)
 
     # Define feature extractor
     cnn = utils.to_device(Vgg16_pt())
     phi = lambda x: cnn.forward(x)
     phi2 = lambda x, y, z: cnn.forward_cat(x, z, samps=y, forward_func=cnn.forward)
-    phi_lower_layers_only = lambda x: cnn.forward(x, lower_layers_only=True)
+    phi_specific_layer = lambda x: cnn.forward(x, content_layer_index=content_layer_index)
 
     # Define Optimizer (Optimize over laplacian pyramid instead of pixels directly)
     s_pyr = dec_lap_pyr(stylized_im, 5)
@@ -44,8 +44,10 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     optimizer = optim.RMSprop(s_pyr, lr=lr)
 
     # Pre-Extract Content Features
-    z_c = phi(content_im) if not lower_layers_only else phi_lower_layers_only(content_im)
-    print(f"Extract content features. Using lower layers only: {lower_layers_only}. Len of z_c: {len(z_c)}")
+    z_c = phi(content_im) if content_layer_index is None else phi_specific_layer(content_im)
+    print(f"Extract content features. Using specific layer for content: {content_layer_index is not None}"
+          f" ({content_layer_index})."
+          f" Len of z_c: {len(z_c)}")
 
     # Pre-Extract Style Features from a Folder
     paths = glob(style_path+'*')[::3]
@@ -113,7 +115,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         
         # Extract Features from Current Output
         z_x = phi(stylized_im)
-        z_x_lower_layers_only = phi_lower_layers_only(stylized_im) if lower_layers_only else None
+        z_x_lower_layers_only = phi_specific_layer(stylized_im) if content_layer_index is not None else None
 
         # Compute Objective and take gradient step
         ell = objective_wrapper.eval(z_x, z_x_lower_layers_only, z_c, z_s_all, gs, content_weight=content_weight,
@@ -127,7 +129,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         if (i+1) % 10 == 0:
             canvas = aug_canvas(stylized_im, scl, i)
             imwrite(temp_name, canvas)
-            # shutil.move(temp_name, output_path)
+            shutil.move(temp_name, output_path)
 
         # Periodically Report Loss and Save Current Image
         if (i+1) % REPORT_INTERVAL == 0:

@@ -33,13 +33,14 @@ class Vgg16_pt(torch.nn.Module):
 
         self.inds = range(11)
 
-    def forward(self, X, lower_layers_only=False):
+    def forward(self, X, content_layer_index=None):
 
         x = X
-        l2 = [X]
+        l2 = [X] if not content_layer_index else []
 
         # could add 18, 20, 22, 25, 27
-        layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if not lower_layers_only else [1]
+        layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if not content_layer_index\
+            else [[1, 3, 6, 8, 11, 13, 15, 22, 29][content_layer_index]]
 
         for i in range(30):
             try:
@@ -84,8 +85,8 @@ class Vgg16_pt(torch.nn.Module):
         else:
             xc = xc[::(xc.shape[0]//const2),:]
 
-        xx = xc[:const2,0]
-        yy = xc[:const2,1]
+        xx = xc[:const2, 0]
+        yy = xc[:const2, 1]
 
         l2 = []
         for i in range(len(out2)):
