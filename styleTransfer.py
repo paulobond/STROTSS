@@ -103,8 +103,8 @@ if __name__=='__main__':
 
     for content_layer_index in range(10):
 
-        print(f"Using layer with index {content_layer_index} for content")
-        output_path = f'./content_layer_index_{content_layer_index}.png'
+        print(f"Using layer with index up to {content_layer_index} for content")
+        output_path = f'./content_layer_index_up_to_{content_layer_index}.png'
         loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points, regions,
                               palette_content=palette_content,
                               output_path=output_path, content_layer_index=content_layer_index)
