@@ -86,10 +86,8 @@ if __name__=='__main__':
     else:
         output_path = './output.png'
 
-    './output.png'
-
     # Preprocess User Guidance if Required
-    coords=0.
+    coords = 0.
     if use_guidance_region:
         i = sys.argv.index('-gr')
         regions = utils.extract_regions(sys.argv[i+1], sys.argv[i+2])
@@ -100,11 +98,7 @@ if __name__=='__main__':
             regions = [[imread(content_path)[:, :]*0.+1.], [imread(style_path)[:, :]*0.+1.]]
 
     # Style Transfer and save output
-
-    for param in [0.1, 0.3, 0.5, 0.7, 1, 1.5]:
-
-        print(f"Using param {param}")
-        output_path = f'./content_weight_{param}.png'
-        loss, canvas = run_st(content_path, style_path, param, max_scl, coords, use_guidance_points, regions,
-                              palette_content=palette_content,
-                              output_path=output_path, content_layer_index=None)
+    loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points,
+                          regions,
+                          palette_content=palette_content,
+                          output_path=output_path, content_layer_index=None)
