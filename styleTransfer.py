@@ -102,6 +102,7 @@ if __name__=='__main__':
     # Style Transfer and save output
     for style_idx_layer in range(9):
         print(f"Running with index layer index {style_idx_layer}")
+        output_path = f'./output_style_up_to_{style_idx_layer}.png'
         loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points,
                               regions,
                               palette_content=palette_content,
