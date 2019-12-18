@@ -21,8 +21,7 @@ class objective_class():
 
         self.eval = self.gen_remd_dp_objective_guided
 
-    def gen_remd_dp_objective_guided(self, z_x, z_x_lower_layers_only_content, z_x_lower_layers_only_style,
-                                     z_c, z_s, gz, content_weight=4.0,
+    def gen_remd_dp_objective_guided(self, z_x, z_x_lower_layers_only, z_c, z_s, gz, content_weight=4.0,
                                      moment_weight=1.0, style_loss_func=remd_loss, content_loss_func=dp_loss,
                                      palette_content=False):
 
@@ -32,9 +31,9 @@ class objective_class():
         for ri in range(len(self.rand_ixx.keys())):
             xx, xy, yx = self.get_feature_inds(ri=ri)
 
-            x_st, c_st = self.spatial_feature_extract(z_x if not z_x_lower_layers_only_content else z_x_lower_layers_only_content,
+            x_st, c_st = self.spatial_feature_extract(z_x if not z_x_lower_layers_only else z_x_lower_layers_only,
                                                       z_c, xx, xy)
-            x_st_all_layers = x_st if not z_x_lower_layers_only_content else self.spatial_feature_extract_bis(z_x, xx, xy)
+            x_st_all_layers = x_st if not z_x_lower_layers_only else self.spatial_feature_extract_bis(z_x, xx, xy)
 
             if gz.sum() > 0.:
                 gxx, gxy = self.get_feature_inds_g()
@@ -49,16 +48,8 @@ class objective_class():
 
             # Compute Style Loss
             fm = 3+2*64+128*2+256*3+512*2
-
-            if z_x_lower_layers_only_style is None:
-                remd_loss, used_style_feats = style_loss_func(x_st_all_layers[:, :fm, :, :], z_st[:, :fm, :, :],
-                                                              self.z_dist, splits=[fm])
-            else:
-                x_st_style_layers = x_st if not z_x_lower_layers_only_content else self.spatial_feature_extract_bis(z_x_lower_layers_only_style,
-                                                                                                                  xx,
-                                                                                                                  xy)
-                remd_loss, used_style_feats = style_loss_func(x_st_style_layers[:, :fm, :, :], z_st[:, :fm, :, :],
-                                                              self.z_dist, splits=[fm])
+            remd_loss, used_style_feats = style_loss_func(x_st_all_layers[:, :fm, :, :], z_st[:, :fm, :, :],
+                                                          self.z_dist, splits=[fm])
 
             if gz.sum() > 0.:
                 for j in range(gz.size(2)):

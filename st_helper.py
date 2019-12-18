@@ -18,7 +18,7 @@ from vgg_pt import *
 
 def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, mask, content_weight=0.,
                    use_guidance=False, regions=0, coords=0, lr=2e-3, palette_content=False,
-                   content_layer_index=None, style_index_layer=None):
+                   content_layer_index=None):
 
     REPORT_INTERVAL = 100
     RESAMPLE_FREQ = 1
@@ -36,10 +36,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     cnn = utils.to_device(Vgg16_pt())
     phi = lambda x: cnn.forward(x)
     phi2 = lambda x, y, z: cnn.forward_cat(x, z, samps=y, forward_func=cnn.forward)
-    phi_specific_layer = lambda x: cnn.forward(x, layer_index=content_layer_index)
-    phi_specific_layer_style = lambda x: cnn.forward(x, layer_index=style_index_layer)
-    phi2_specific_layer = lambda x, y, z: cnn.forward_cat(x, z, samps=y, forward_func=cnn.forward,
-                                                          layer_index=style_index_layer)
+    phi_specific_layer = lambda x: cnn.forward(x, content_layer_index=content_layer_index)
 
     # Define Optimizer (Optimize over laplacian pyramid instead of pixels directly)
     s_pyr = dec_lap_pyr(stylized_im, 5)
@@ -61,12 +58,9 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     # Extract style features
     z_s_all = []
     for ri in range(len(regions[1])):  # = number of style images = 1
-        z_s, style_ims = load_style_folder(phi2_specific_layer, paths, regions, ri, n_samps=-1, subsamps=1000, scale=long_side,
-                                           inner=5) if style_index_layer is not None else load_style_folder(phi2, paths, regions,
-                                                                                                            ri, n_samps=-1, subsamps=1000,
-                                                                                                            scale=long_side, inner=5)
+        z_s, style_ims = load_style_folder(phi2, paths, regions, ri, n_samps=-1, subsamps=1000, scale=long_side,
+                                           inner=5)
         z_s_all.append(z_s)
-    print(f"#########   Shape zs: {z_s_all[0][0].shape}   #############")
 
     # Extract guidance features if required
     gs = np.array([0.])
@@ -121,12 +115,10 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         
         # Extract Features from Current Output
         z_x = phi(stylized_im)
-        z_x_lower_layers_only_content = phi_specific_layer(stylized_im) if content_layer_index is not None else None
-        z_x_lower_layers_only_style = phi_specific_layer_style(stylized_im) if style_index_layer is not None else None
+        z_x_lower_layers_only = phi_specific_layer(stylized_im) if content_layer_index is not None else None
 
         # Compute Objective and take gradient step
-        ell = objective_wrapper.eval(z_x, z_x_lower_layers_only_content, z_x_lower_layers_only_style, z_c, z_s_all, gs,
-                                     content_weight=content_weight,
+        ell = objective_wrapper.eval(z_x, z_x_lower_layers_only, z_c, z_s_all, gs, content_weight=content_weight,
                                      moment_weight=1.0,
                                      palette_content=palette_content)
 
