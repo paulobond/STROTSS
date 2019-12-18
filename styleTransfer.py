@@ -10,7 +10,8 @@ from utils import *
 
 
 def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance, regions,
-           output_path='./output.png', palette_content=False, content_layer_index=None):
+           output_path='./output.png', palette_content=False, content_layer_index=None,
+           style_index_layer=None):
 
     smll_sz = 64
     start = time.time()
@@ -48,7 +49,8 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
                                                  use_guidance=use_guidance, coords=coords,
                                                  content_weight=content_weight, lr=lr, regions=regions,
                                                  palette_content=palette_content,
-                                                 content_layer_index=content_layer_index)
+                                                 content_layer_index=content_layer_index,
+                                                 style_index_layer=style_index_layer)
 
         # Decrease Content Weight for next scale (alpha)
         content_weight = content_weight/2.0
@@ -98,7 +100,10 @@ if __name__=='__main__':
             regions = [[imread(content_path)[:, :]*0.+1.], [imread(style_path)[:, :]*0.+1.]]
 
     # Style Transfer and save output
-    loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points,
-                          regions,
-                          palette_content=palette_content,
-                          output_path=output_path, content_layer_index=None)
+    for style_idx_layer in range(9):
+        print(f"Running with index layer index {style_idx_layer}")
+        loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points,
+                              regions,
+                              palette_content=palette_content,
+                              output_path=output_path, content_layer_index=None,
+                              style_index_layer=style_idx_layer)

@@ -33,16 +33,16 @@ class Vgg16_pt(torch.nn.Module):
 
         self.inds = range(11)
 
-    def forward(self, X, content_layer_index=None):
+    def forward(self, X, layer_index=None):
 
         x = X
         l2 = [X] #if not content_layer_index else []
 
         # could add 18, 20, 22, 25, 27
-        if content_layer_index == 0:
+        if layer_index == 0:
             layers = []
         else:
-            layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if content_layer_index is None else [1, 3, 6, 8, 11, 13, 15, 22, 29][:content_layer_index]
+            layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if layer_index is None else [1, 3, 6, 8, 11, 13, 15, 22, 29][:layer_index]
 
         for i in range(30):
             try:
@@ -54,13 +54,13 @@ class Vgg16_pt(torch.nn.Module):
 
         return l2
 
-    def forward_cat(self, X, r, samps=100, forward_func=None):
+    def forward_cat(self, X, r, samps=100, forward_func=None, layer_index=None):
 
         if not forward_func:
             forward_func = self.forward
 
         x = X
-        out2 = forward_func(X)
+        out2 = forward_func(X, layer_index=layer_index)
 
         try:
             r = r[:, :, 0]
@@ -72,10 +72,10 @@ class Vgg16_pt(torch.nn.Module):
         else:
             region_mask = np.greater(r.flatten(), 0.5)
 
-        xx,xy = np.meshgrid(np.array(range(x.size(2))), np.array(range(x.size(3))))
+        xx, xy = np.meshgrid(np.array(range(x.size(2))), np.array(range(x.size(3))))
         xx = np.expand_dims(xx.flatten(), 1)
         xy = np.expand_dims(xy.flatten(), 1)
-        xc = np.concatenate([xx,xy], 1)
+        xc = np.concatenate([xx, xy], 1)
         
         xc = xc[region_mask, :]
 
@@ -85,7 +85,7 @@ class Vgg16_pt(torch.nn.Module):
         if use_random:
             np.random.shuffle(xc)
         else:
-            xc = xc[::(xc.shape[0]//const2),:]
+            xc = xc[::(xc.shape[0]//const2), :]
 
         xx = xc[:const2, 0]
         yy = xc[:const2, 1]
@@ -122,7 +122,7 @@ class Vgg16_pt(torch.nn.Module):
             temp = out2[i]
             temp2 = F.pad(temp, (2, 2, 0, 0), value=1.)
             temp3 = F.pad(temp, (0, 0, 2, 2), value=1.)
-            out2[i] = torch.cat([temp, temp2[:, :, :, 4:], temp2[:, :, :, :-4], temp3[:, :, 4:, :], temp3[:, :, :-4, :]]
-                                ,1)
+            out2[i] = torch.cat([temp, temp2[:, :, :, 4:], temp2[:, :, :, :-4], temp3[:, :, 4:, :],
+                                 temp3[:, :, :-4, :]], 1)
 
         return out2
