@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 from imageio import imread
 from torch.autograd import Variable
+from PIL import Image
 
 use_gpu = True
 
@@ -195,6 +196,31 @@ def extract_regions(content_path, style_path):
 
     return [c_out, s_out]
 
+def harmo_regions(content_path, patch_path, coords=(0,0)):
+    til = Image.open(patch_path)
+    im = Image.open(content_path)
+    im.paste(til, coords, til)
+
+    mask = Image.new(mode='RGB', size=im.size)
+    mask.paste((255, 0, 0), coords, til)
+
+    cp_path = content_path+"_"+patch_path
+    im.save(cp_path+"_harmo_input.jpg")
+    mask.save(cp_path+"_harmo_mask.jpg")
+
+    c_regions = imread(cp_path+"_harmo_mask.jpg").transpose(1, 0, 2)
+
+    color_codes, c1 = np.unique(c_regions.reshape(-1, c_regions.shape[2]), axis=0, return_counts=True)
+    color_codes = color_codes[c1 > 10000]
+
+    c_out = []
+    for c in color_codes:
+        c_expand = np.expand_dims(np.expand_dims(c, 0), 0)
+        c_mask = np.equal(np.sum(c_regions - c_expand, axis=2), 0).astype(np.float32)
+        c_out.append(c_mask)
+
+    return c_out
+
 
 big_patch_sz = 256
 
@@ -206,7 +232,6 @@ def load_path_for_pytorch(path, max_side=1000, force_scale=False, verbose=True):
     s = x.shape
 
     x = x / 255. - 0.5
-    xt = x.copy()
 
     if len(s) < 3:
         x = np.stack([x, x, x], 2)
