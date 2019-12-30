@@ -33,13 +33,16 @@ class Vgg16_pt(torch.nn.Module):
 
         self.inds = range(11)
 
-    def forward(self, X, lower_layers_only=False):
+    def forward(self, X, content_layer_index=None):
 
         x = X
-        l2 = [X]
+        l2 = [X] #if not content_layer_index else []
 
         # could add 18, 20, 22, 25, 27
-        layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if not lower_layers_only else [1]
+        if content_layer_index == 0:
+            layers = []
+        else:
+            layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if content_layer_index is None else [1, 3, 6, 8, 11, 13, 15, 22, 29][:content_layer_index]
 
         for i in range(30):
             try:
@@ -51,13 +54,13 @@ class Vgg16_pt(torch.nn.Module):
 
         return l2
 
-    def forward_cat(self, X, r, samps=100, forward_func=None, lower_layers_only=False):
+    def forward_cat(self, X, r, samps=100, forward_func=None):
 
         if not forward_func:
             forward_func = self.forward
 
         x = X
-        out2 = forward_func(X, lower_layers_only=lower_layers_only)
+        out2 = forward_func(X)
 
         try:
             r = r[:, :, 0]
@@ -84,8 +87,8 @@ class Vgg16_pt(torch.nn.Module):
         else:
             xc = xc[::(xc.shape[0]//const2),:]
 
-        xx = xc[:const2,0]
-        yy = xc[:const2,1]
+        xx = xc[:const2, 0]
+        yy = xc[:const2, 1]
 
         l2 = []
         for i in range(len(out2)):
@@ -108,10 +111,10 @@ class Vgg16_pt(torch.nn.Module):
 
         return out2
 
-    def forward_diff(self, X, lower_layers_only=False):
+    def forward_diff(self, X):
 
         inds = self.inds
-        l2 = self.forward(X, lower_layers_only=lower_layers_only)
+        l2 = self.forward(X)
 
         out2 = [l2[i].contiguous() for i in inds]
 

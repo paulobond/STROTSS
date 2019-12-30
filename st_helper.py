@@ -18,14 +18,14 @@ from vgg_pt import *
 
 def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, mask, content_weight=0.,
                    use_guidance=False, regions=0, coords=0, lr=2e-3, palette_content=False,
-                   lower_layers_only=False, use_harmonization=False, use_multi_style=False):
+                   lower_layers_only=False, use_harmonization=False, use_multi_style=False, content_layer_index=None):
 
     REPORT_INTERVAL = 100
     RESAMPLE_FREQ = 1
     MAX_ITER = 250
     save_ind = 0
 
-    temp_name = './'+output_path.split('/')[-1].split('.')[0]+'_temp.png'
+    temp_name = './'+output_path.split('/')[-1].split('.')[0]+f'_temp_{scl}.png'
 
     # Keep track of current output image for GUI
     canvas = aug_canvas(stylized_im, scl, 0)
@@ -36,7 +36,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     cnn = utils.to_device(Vgg16_pt())
     phi = lambda x: cnn.forward(x)
     phi2 = lambda x, y, z: cnn.forward_cat(x, z, samps=y, forward_func=cnn.forward)
-    phi_lower_layers_only = lambda x: cnn.forward(x, lower_layers_only=True)
+    phi_specific_layer = lambda x: cnn.forward(x, content_layer_index=content_layer_index)
 
     # Define Optimizer (Optimize over laplacian pyramid instead of pixels directly)
     s_pyr = dec_lap_pyr(stylized_im, 5)
@@ -44,7 +44,10 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     optimizer = optim.RMSprop(s_pyr, lr=lr)
 
     # Pre-Extract Content Features
-    z_c = phi(content_im) if not lower_layers_only else phi_lower_layers_only(content_im)
+    z_c = phi(content_im) if content_layer_index is None else phi_specific_layer(content_im)
+    print(f"Extract content features. Using specific layer for content: {content_layer_index is not None}"
+          f" ({content_layer_index})."
+          f" Len of z_c: {len(z_c)}")
 
     # Pre-Extract Style Features from a Folder
     if use_multi_style:
@@ -111,7 +114,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         
         # Extract Features from Current Output
         z_x = phi(stylized_im)
-        z_x_lower_layers_only = phi_lower_layers_only(stylized_im) if lower_layers_only else None
+        z_x_lower_layers_only = phi_specific_layer(stylized_im) if content_layer_index is not None else None
 
         dim = ((ri==0) and use_harmonization)
 
