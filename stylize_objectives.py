@@ -5,6 +5,7 @@ import torch
 
 import utils
 from contextual_loss import *
+from vgg_pt import Vgg16_pt
 
 use_random = True
 
@@ -50,6 +51,8 @@ class objective_class():
 
             # Compute Style Loss
             fm = 3+2*64+128*2+256*3+512*2
+            cnn = Vgg16_pt()
+            fm = cnn.get_fm()
             remd_loss, used_style_feats = style_loss_func(x_st_all_layers[:, :fm, :, :], z_st[:, :, :fm, :],
                                                           self.z_dist, splits=[fm])
 

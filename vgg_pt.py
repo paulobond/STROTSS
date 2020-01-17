@@ -33,18 +33,45 @@ class Vgg16_pt(torch.nn.Module):
 
         self.inds = range(11)
 
+        self.layers_to_use = [15, 22, 29]
+        self.use_pre_layer = False
+
+    def get_fm(self):
+        fm = 3 if self.use_pre_layer else 0
+        if 1 in self.layers_to_use:
+            fm += 64
+        if 3 in self.layers_to_use:
+            fm += 64
+        if 6 in self.layers_to_use:
+            fm += 128
+        if 8 in self.layers_to_use:
+            fm += 128
+        if 11 in self.layers_to_use:
+            fm += 256
+        if 13 in self.layers_to_use:
+            fm += 256
+        if 15 in self.layers_to_use:
+            fm += 256
+        if 22 in self.layers_to_use:
+            fm += 512
+        if 29 in self.layers_to_use:
+            fm += 512
+        return fm
+
     def forward(self, X, content_layer_index=None):
 
         x = X
         l2 = [X] #if not content_layer_index else []
 
-        #l2  = []
+        l2 = [X] if self.use_pre_layer else []
 
         # could add 18, 20, 22, 25, 27
         if content_layer_index == 0:
             layers = []
         else:
             layers = [1, 3, 6, 8, 11, 13, 15, 22, 29] if content_layer_index is None else [1, 3, 6, 8, 11, 13, 15, 22, 29][:content_layer_index]
+
+            layers = self.layers_to_use
             # layers = [1]
 
         for i in range(30):
