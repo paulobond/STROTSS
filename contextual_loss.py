@@ -74,10 +74,13 @@ def viz_d(zx,coords):
     viz = viz.data.cpu().numpy()[0,0,:,:]/len(zx)
     return vis_o
 
-def remd_loss(X,Y, h=None, cos_d=True, splits= [3+64+64+128+128+256+256+256+512+512],return_mat=False):
+def remd_loss(X,Y, h=None, cos_d=True, splits= [3+64+64+128+128+256+256+256+512+512],return_mat=False, verbose = False):
 
     d = X.size(1)
 
+    if verbose:
+        print(f"Size of X (remd_loss): {X.shape}")
+        print(f"Size of Y (remd_loss): {Y.shape}")
 
     if d == 3:
         X = utils.rgb_to_yuv_pc(X.transpose(0,1).contiguous().view(d,-1)).transpose(0,1)
@@ -88,6 +91,8 @@ def remd_loss(X,Y, h=None, cos_d=True, splits= [3+64+64+128+128+256+256+256+512+
         Y = Y.transpose(0,1).contiguous().view(d,-1).transpose(0,1)
 
     #Relaxed EMD
+    print(f"Size bis of X (remd_loss): {X.shape}")
+    print(f"Size bis of Y (remd_loss): {Y.shape}")
     CX_M = get_DMat(X,Y,1.,cos_d=True, splits=splits)
     
     if return_mat:
