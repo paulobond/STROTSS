@@ -34,7 +34,6 @@ class objective_class():
         for ri in range(len(self.rand_ixx.keys())):
             xx, xy, yx = self.get_feature_inds(ri=ri)
             x_st, c_st = self.spatial_feature_extract(z_x, z_c, xx, xy)
-            print(f"ri: {ri}; x_stshape: {x_st.shape}")
 
             if gz.sum() > 0.:
                 gxx, gxy = self.get_feature_inds_g()
