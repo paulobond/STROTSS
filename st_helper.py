@@ -97,7 +97,9 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     if use_guidance:
         objective_wrapper.init_g_inds(coords, stylized_im)
 
-
+    print(f"**** stylized_im  {scl} 0 ****")
+    print(stylized_im)
+    print("***************")
 
     for i in range(MAX_ITER):
 
