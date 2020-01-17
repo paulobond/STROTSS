@@ -81,7 +81,7 @@ def remd_loss(X,Y, h=None, cos_d=True, splits= [3+64+64+128+128+256+256+256+512+
         X = X.transpose(0,1).contiguous().view(d,-1).transpose(0,1)
         Y = Y.transpose(0,1).contiguous().view(d,-1).transpose(0,1)
 
-    Y = Y.transpost(0, 1)
+    Y = Y.transpose(0, 1)
 
     #Relaxed EMD
     CX_M = get_DMat(X,Y,1.,cos_d=True, splits=splits)
