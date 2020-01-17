@@ -110,6 +110,11 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         else:
             stylized_im = s_pyr[0]
 
+        if i<3:
+            print(f"**** stylized_im  {scl} 1 ****")
+            print(stylized_im)
+            print("***************")
+
         ## Dramatically Resample Large Set of Spatial Locations ##
         if i==0 or i%(RESAMPLE_FREQ*10) == 0:
             for ri in range(len(regions[0])):
@@ -125,6 +130,11 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
                 objective_wrapper.init_inds(z_c, z_s_all,r,ri)
 
+        if i<3:
+            print(f"**** stylized_im  {scl} 2 ****")
+            print(stylized_im)
+            print("***************")
+
         ## Subsample spatial locations to compute loss over ##
         if i==0 or i%RESAMPLE_FREQ == 0:
             objective_wrapper.shuffle_feature_inds()
@@ -136,17 +146,19 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         ell = objective_wrapper.eval(z_x, z_c, z_s_all, gs, 0., content_weight=content_weight,moment_weight=1.0,
                                      verbose=(i%200==0))
 
-        print(f"**** stylized_im  {scl} 1 ****")
-        print(stylized_im)
-        print("***************")
+        if i<3:
+            print(f"**** stylized_im  {scl} 3 ****")
+            print(stylized_im)
+            print("***************")
 
         ell.backward()
         optimizer.step()
 
-        print(f"**** stylized_im  {scl} 2 ****")
-        print(stylized_im)
-        print("***************")
-            
+        if i <3:
+            print(f"**** stylized_im  {scl} 4 ****")
+            print(stylized_im)
+            print("***************")
+
         ## Periodically save output image for GUI ###
         if (i+1)%10==0:
             canvas = aug_canvas(stylized_im, scl, i)
@@ -158,5 +170,9 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
             print((i+1),ell)
             save_ind += 1
 
+        if i<3:
+            print(f"**** stylized_im  {scl} 5 ****")
+            print(stylized_im)
+            print("***************")
 
     return stylized_im, ell
