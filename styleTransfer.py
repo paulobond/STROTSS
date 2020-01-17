@@ -66,6 +66,16 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
     print('Final Loss:', final_loss)
 
     canvas = torch.clamp(stylized_im[0],-0.5,0.5).data.cpu().numpy().transpose(1,2,0)
+    print("**** canvas  ****")
+    print(canvas)
+    print("***************")
+    print(f"max value: {canvas.max()}")
+    print(f"min value: {canvas.min()}")
+
+
+
+    torch.save(canvas, './canvas_eg.pth')
+
     imwrite(output_path,canvas)
     print('Writing to output path:', output_path)
 
