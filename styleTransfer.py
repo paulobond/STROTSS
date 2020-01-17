@@ -57,6 +57,12 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
         ### Style Transfer at this scale ###
         stylized_im, final_loss = style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, 0., use_guidance=use_guidance, coords=coords, content_weight=content_weight, lr=lr, regions=regions)
 
+        print(f"**** stylized_im  {scl}****")
+        print(stylized_im)
+        print("***************")
+        print(f"max value: {stylized_im.max()}")
+        print(f"min value: {stylized_im.min()}")
+
         canvas = F.upsample(torch.clamp(stylized_im,-0.5,0.5),(content_im.size(2),content_im.size(3)),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
         
         ### Decrease Content Weight for next scale ###
@@ -66,13 +72,9 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
     print('Final Loss:', final_loss)
 
     canvas = torch.clamp(stylized_im[0],-0.5,0.5).data.cpu().numpy().transpose(1,2,0)
-    print("**** canvas  ****")
-    print(canvas)
-    print("***************")
+
     print(f"max value: {canvas.max()}")
     print(f"min value: {canvas.min()}")
-
-
 
     torch.save(canvas, './canvas_eg.pth')
 
