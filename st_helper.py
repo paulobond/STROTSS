@@ -131,18 +131,9 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         ell = objective_wrapper.eval(z_x, z_c, z_s_all, gs, 0., content_weight=content_weight,moment_weight=1.0,
                                      verbose=(i%200==0))
 
-        if i==0:
-            print(f"**** stylized_im  {scl} 3 ****")
-            print(s_pyr)
-            print("***************")
 
         ell.backward()
         optimizer.step()
-
-        if i==0:
-            print(f"**** stylized_im  {scl} 4 ****")
-            print(s_pyr)
-            print("***************")
 
         ## Periodically save output image for GUI ###
         if (i+1)%10==0:
