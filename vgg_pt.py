@@ -12,7 +12,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 use_random = True
 
 # [1, 3, 6, 8, 11, 13, 15, 22,29]
-LAYERS_TO_USE = [29]
+LAYERS_TO_USE = [1]
 INCLUDE_PRE_LAYER = False
 
 class Vgg16_pt(torch.nn.Module):
