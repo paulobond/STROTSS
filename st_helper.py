@@ -98,7 +98,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         objective_wrapper.init_g_inds(coords, stylized_im)
 
     print(f"**** stylized_im  {scl} 0 ****")
-    print(stylized_im)
+    print(s_pyr)
     print("***************")
 
     for i in range(MAX_ITER):
@@ -112,7 +112,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
         if i<3:
             print(f"**** stylized_im  {scl} 1 ****")
-            print(stylized_im)
+            print(s_pyr)
             print("***************")
 
         ## Dramatically Resample Large Set of Spatial Locations ##
@@ -132,7 +132,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
         if i<3:
             print(f"**** stylized_im  {scl} 2 ****")
-            print(stylized_im)
+            print(s_pyr)
             print("***************")
 
         ## Subsample spatial locations to compute loss over ##
@@ -148,7 +148,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
         if i<3:
             print(f"**** stylized_im  {scl} 3 ****")
-            print(stylized_im)
+            print(s_pyr)
             print("***************")
 
         ell.backward()
@@ -156,7 +156,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
         if i <3:
             print(f"**** stylized_im  {scl} 4 ****")
-            print(stylized_im)
+            print(s_pyr)
             print("***************")
 
         ## Periodically save output image for GUI ###
@@ -172,7 +172,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
         if i<3:
             print(f"**** stylized_im  {scl} 5 ****")
-            print(stylized_im)
+            print(s_pyr)
             print("***************")
 
     return stylized_im, ell
