@@ -91,8 +91,9 @@ def remd_loss(X,Y, h=None, cos_d=True, splits= [3+64+64+128+128+256+256+256+512+
         Y = Y.transpose(0,1).contiguous().view(d,-1).transpose(0,1)
 
     #Relaxed EMD
-    print(f"Size bis of X (remd_loss): {X.shape}")
-    print(f"Size bis of Y (remd_loss): {Y.shape}")
+    if verbose:
+        print(f"Size bis of X (remd_loss): {X.shape}")
+        print(f"Size bis of Y (remd_loss): {Y.shape}")
     CX_M = get_DMat(X,Y,1.,cos_d=True, splits=splits)
     
     if return_mat:
