@@ -50,7 +50,7 @@ class objective_class():
 
             # Compute Style Loss
             fm = 3+2*64+128*2+256*3+512*2
-            remd_loss, used_style_feats = style_loss_func(x_st_all_layers[:, :fm, :, :], z_st[:, :fm, :, :],
+            remd_loss, used_style_feats = style_loss_func(x_st_all_layers[:, :fm, :, :], z_st[:, :, :fm, :],
                                                           self.z_dist, splits=[fm])
 
             if gz.sum() > 0.:
