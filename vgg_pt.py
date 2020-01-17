@@ -13,7 +13,7 @@ use_random = True
 
 # [1, 3, 6, 8, 11, 13, 15, 22,29]
 LAYERS_TO_USE = [1, 3, 6, 8, 11, 13, 15, 22,29]
-INCLUDE_PRE_LAYER = True
+INCLUDE_PRE_LAYER = False
 
 class Vgg16_pt(torch.nn.Module):
     def __init__(self, requires_grad=False):
