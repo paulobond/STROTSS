@@ -71,7 +71,7 @@ class Vgg16_pt(torch.nn.Module):
         inds = self.inds
 
         x = X
-        l2 = [X] if self.include_pre_layer else []
+        l2 = [X]
         for i in range(30):
             try:
                 x =  self.vgg_layers[i].forward(x)#[:,:,1:-1,1:-1]

@@ -7,6 +7,8 @@ import torch.nn.functional as F
 from contextual_loss import *
 import utils
 from vgg_pt import Vgg16_pt
+from vgg_pt import INCLUDE_PRE_LAYER
+
 
 use_random=True
 
@@ -49,11 +51,16 @@ class objective_class():
 
             fm = Vgg16_pt.get_fm()
 
-            ell_content = content_loss_func(x_st[:,:,:,:], c_st[:,:,:,:])
-
+            if INCLUDE_PRE_LAYER:
+                ell_content = content_loss_func(x_st[:,:,:,:], c_st[:,:,:,:])
+            else:
+                ell_content = content_loss_func(x_st[:,3:,:,:], c_st[:,3:,:,:])
 
             ## Compute Style Loss ##
-            remd_loss, used_style_feats = style_loss_func(x_st[:,:fm,:,:], z_st[:,:fm,:,:], self.z_dist, splits=[fm], verbose=verbose)
+            if INCLUDE_PRE_LAYER:
+                remd_loss, used_style_feats = style_loss_func(x_st[:,:fm,:,:], z_st[:,:fm,:,:], self.z_dist, splits=[fm], verbose=verbose)
+            else:
+                remd_loss, used_style_feats = style_loss_func(x_st[:,3:fm,:,:], z_st[:,3:fm,:,:], self.z_dist, splits=[fm], verbose=verbose)
 
             if gz.sum() > 0.:
                 for j in range(gz.size(2)):
@@ -72,10 +79,10 @@ class objective_class():
 
 
             ### Combine Terms and Normalize ###
-            ell_style = remd_loss #+moment_weight*moment_ell
+            ell_style = remd_loss +moment_weight*moment_ell
             style_weight = 1.0 + moment_weight
-            # final_loss += (content_weight*ell_content+ell_style)/(content_weight+style_weight)
-            final_loss = ell_style
+            final_loss += (content_weight*ell_content+ell_style)/(content_weight+style_weight)
+            #final_loss = ell_style
         
         return final_loss/len(self.rand_ixx.keys())
 
