@@ -10,10 +10,15 @@ from utils import *
 
 
 def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance, regions,
-           output_path='./output.png', palette_content=False, content_layer_index=None):
+           output_path='./output.png', palette_content=False, lower_layers_only=False, use_harmonization=False, use_multi_style=False, content_layer_index=None):
 
     smll_sz = 64
     start = time.time()
+
+    if use_multi_style:
+        paths = glob(style_path + '**/*', recursive=True)
+    else:
+        paths = glob(style_path + '*')[::3]
 
     for scl in range(1, max_scl):
 
@@ -24,7 +29,7 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
         content_im = utils.to_device(
             Variable(load_path_for_pytorch(content_path, long_side, force_scale=True).unsqueeze(0)))
         content_im_mean = utils.to_device(
-            Variable(load_path_for_pytorch(style_path,long_side, force_scale=True).unsqueeze(0)))\
+            Variable(load_path_for_pytorch(paths[0],long_side, force_scale=True).unsqueeze(0)))\
             .mean(2, keepdim=True).mean(3, keepdim=True)
         
         # Compute bottom level of Laplacian pyramid for content image at current scale
@@ -47,7 +52,8 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
         stylized_im, final_loss = style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, 0.,
                                                  use_guidance=use_guidance, coords=coords,
                                                  content_weight=content_weight, lr=lr, regions=regions,
-                                                 palette_content=palette_content,
+                                                 palette_content=palette_content, lower_layers_only=lower_layers_only,
+                                                 use_harmonization=use_harmonization,
                                                  content_layer_index=content_layer_index)
 
         # Decrease Content Weight for next scale (alpha)
@@ -57,18 +63,21 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
     print('Final Loss:', final_loss)
 
     canvas = torch.clamp(stylized_im[0], -0.5, 0.5).data.cpu().numpy().transpose(1, 2, 0)
-    # imwrite(output_path, canvas)
+    imwrite(output_path, canvas)
     return final_loss, stylized_im
 
 
 if __name__=='__main__':
-
     # Parse Command Line Arguments
+
     content_path = sys.argv[1]
     style_path = sys.argv[2]
-    content_weight = float(sys.argv[3])*16.0
+    content_weight = float(sys.argv[3]) * 16.0
+
     max_scl = 5
 
+    use_multi_style = "-multi" in sys.argv
+    use_harmonization = '-harmo' in sys.argv
     use_guidance_region = '-gr' in sys.argv
     use_guidance_points = False
     use_gpu = not ('-cpu' in sys.argv) and torch.cuda.is_available()
@@ -80,6 +89,12 @@ if __name__=='__main__':
     ims = []
 
     palette_content = '-orgclr' in sys.argv
+    content_loss_lower_layers_only = '-ctllo' in sys.argv
+
+    if content_loss_lower_layers_only:
+        print("******** EXPERIMENT: USING LOWER LAYERS ONLY TO COMPUTE CONTENT LOSS **********")
+    else:
+        print("******** USING ALL LAYERS TO COMPUTE CONTENT LOSS AND STYLE LOSS **********")
 
     if '-output' in sys.argv:
         output_path = sys.argv[sys.argv.index('-output') + 1]
@@ -91,6 +106,17 @@ if __name__=='__main__':
     if use_guidance_region:
         i = sys.argv.index('-gr')
         regions = utils.extract_regions(sys.argv[i+1], sys.argv[i+2])
+    elif use_harmonization:
+        i = sys.argv.index('-harmo')
+        content_regions = utils.harmo_regions(content_path, style_path, (int(sys.argv[i+1]), int(sys.argv[i+2])))
+        regions = [content_regions, [imread(style_path)[:, :, 0]*0.+1., imread(style_path)[:, :, 0]*0.+1.]]
+
+        orig_content_path = content_path
+        content_path = content_path+"_"+style_path+"_harmo_input.jpg"
+        style_path = orig_content_path
+    elif use_multi_style:
+        style_paths = glob(style_path + '**/*',recursive=True)
+        regions = [[imread(content_path)[:, :, 0] * 0. + 1.], [imread(i)[:, :, 0] * 0. + 1. for i in style_paths]]
     else:
         try:
             regions = [[imread(content_path)[:, :, 0]*0.+1.], [imread(style_path)[:, :, 0]*0.+1.]]
@@ -98,7 +124,10 @@ if __name__=='__main__':
             regions = [[imread(content_path)[:, :]*0.+1.], [imread(style_path)[:, :]*0.+1.]]
 
     # Style Transfer and save output
-    loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points,
-                          regions,
+    loss, canvas = run_st(content_path, style_path, content_weight, max_scl, coords, use_guidance_points, regions,
                           palette_content=palette_content,
-                          output_path=output_path, content_layer_index=None)
+                          lower_layers_only=content_loss_lower_layers_only,
+                          output_path=output_path,
+                          use_harmonization=use_harmonization,
+                          use_multi_style=use_multi_style,
+                          content_layer_index = None)

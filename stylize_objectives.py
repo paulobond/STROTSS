@@ -23,10 +23,12 @@ class objective_class():
 
     def gen_remd_dp_objective_guided(self, z_x, z_x_lower_layers_only, z_c, z_s, gz, content_weight=4.0,
                                      moment_weight=1.0, style_loss_func=remd_loss, content_loss_func=dp_loss,
-                                     palette_content=False):
+                                     palette_content=False, dim=False):
 
         # Extract Random Subset of Features from Stylized Image & Content Image #
         # (Choose Features from Same locations in Stylized Image & Content Image) #
+        dim_factor = 0.05 if dim else 1
+
         final_loss = 0.
         for ri in range(len(self.rand_ixx.keys())):
             xx, xy, yx = self.get_feature_inds(ri=ri)
@@ -78,7 +80,7 @@ class objective_class():
             style_weight = 1.0 + moment_weight
             final_loss += (content_weight*ell_content+ell_style)/(content_weight+style_weight)
         
-        return final_loss/len(self.rand_ixx.keys())
+        return (dim_factor*final_loss)/len(self.rand_ixx.keys())
 
     def init_inds(self, z_x, z_s_all, r, ri):
         """

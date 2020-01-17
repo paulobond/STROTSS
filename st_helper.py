@@ -18,7 +18,7 @@ from vgg_pt import *
 
 def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, mask, content_weight=0.,
                    use_guidance=False, regions=0, coords=0, lr=2e-3, palette_content=False,
-                   content_layer_index=None):
+                   lower_layers_only=False, use_harmonization=False, use_multi_style=False, content_layer_index=None):
 
     REPORT_INTERVAL = 100
     RESAMPLE_FREQ = 1
@@ -50,8 +50,10 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
           f" Len of z_c: {len(z_c)}")
 
     # Pre-Extract Style Features from a Folder
-    paths = glob(style_path+'*')[::3]
-
+    if use_multi_style:
+        paths = glob(style_path + '**/*',recursive=True)
+    else:
+        paths = glob(style_path+'*')[::3]
     # Create Objective Object
     objective_wrapper = objective_class()
 
@@ -73,7 +75,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
     for ri in range(len(regions[0])):  # = number of content images?
         # Initializes the random positions in objective_wrapper
-
         r_temp = regions[0][ri]
         r_temp = torch.from_numpy(r_temp).unsqueeze(0).unsqueeze(0).contiguous()
         r = F.upsample(r_temp, (stylized_im.size(3), stylized_im.size(2)), mode='bilinear')[0, 0, :, :].numpy()
@@ -89,7 +90,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         objective_wrapper.init_g_inds(coords, stylized_im)
 
     for i in range(MAX_ITER):
-
         # zero out gradients and compute output image from pyramid
         optimizer.zero_grad()
         stylized_im = syn_lap_pyr(s_pyr)  # use pyramid
@@ -97,7 +97,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         # Dramatically re-sample Large Set of Spatial Locations
         if i == 0 or i % (RESAMPLE_FREQ*10) == 0:
             for ri in range(len(regions[0])):
-                
                 r_temp = regions[0][ri]
                 r_temp = torch.from_numpy(r_temp).unsqueeze(0).unsqueeze(0).contiguous()
                 r = F.upsample(r_temp, (stylized_im.size(3), stylized_im.size(2)), mode='bilinear')[0, 0, :, :].numpy()
@@ -117,10 +116,12 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         z_x = phi(stylized_im)
         z_x_lower_layers_only = phi_specific_layer(stylized_im) if content_layer_index is not None else None
 
+        dim = ((ri==0) and use_harmonization)
+
         # Compute Objective and take gradient step
         ell = objective_wrapper.eval(z_x, z_x_lower_layers_only, z_c, z_s_all, gs, content_weight=content_weight,
                                      moment_weight=1.0,
-                                     palette_content=palette_content)
+                                     palette_content=palette_content, dim=dim)
 
         ell.backward()
         optimizer.step()
