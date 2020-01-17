@@ -25,7 +25,7 @@ class objective_class():
         if objective == 'remd_dp_g':
             self.eval = self.gen_remd_dp_objective_guided
 
-    def gen_remd_dp_objective_guided(self, z_x, z_c, z_s, gz, d_ell, d_weight=10.0, content_weight=4.0, moment_weight=1.0, style_loss_func=remd_loss, content_loss_func=dp_loss, h=1.0):
+    def gen_remd_dp_objective_guided(self, z_x, z_c, z_s, gz, d_ell, d_weight=10.0, content_weight=4.0, moment_weight=1.0, style_loss_func=remd_loss, content_loss_func=dp_loss, h=1.0,verbose=False):
 
 
         ## Extract Random Subset of Features from Stylized Image & Content Image ##
@@ -52,7 +52,7 @@ class objective_class():
 
 
             ## Compute Style Loss ##
-            remd_loss, used_style_feats = style_loss_func(x_st[:,:fm,:,:], z_st[:,:fm,:,:], self.z_dist, splits=[fm])
+            remd_loss, used_style_feats = style_loss_func(x_st[:,:fm,:,:], z_st[:,:fm,:,:], self.z_dist, splits=[fm], verbose=verbose)
 
             if gz.sum() > 0.:
                 for j in range(gz.size(2)):

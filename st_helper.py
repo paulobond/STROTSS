@@ -131,7 +131,8 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         z_x = phi(stylized_im)
 
         ## Compute Objective and take gradient step ##
-        ell = objective_wrapper.eval(z_x, z_c, z_s_all, gs, 0., content_weight=content_weight,moment_weight=1.0)
+        ell = objective_wrapper.eval(z_x, z_c, z_s_all, gs, 0., content_weight=content_weight,moment_weight=1.0,
+                                     verbose=(i%200==0))
 
         ell.backward()
         optimizer.step()
