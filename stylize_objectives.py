@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 from contextual_loss import *
 import utils
+from vgg_pt import Vgg16_pt
 
 use_random=True
 
@@ -46,7 +47,7 @@ class objective_class():
 
             ## Compute Content Loss ##
 
-            fm = 3+2*64+128*2+256*3+512*2
+            fm = Vgg16_pt.get_fm()
 
             ell_content = content_loss_func(x_st[:,:,:,:], c_st[:,:,:,:])
 

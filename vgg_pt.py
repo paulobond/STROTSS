@@ -11,6 +11,8 @@ import numpy as np
 ssl._create_default_https_context = ssl._create_unverified_context
 use_random = True
 
+LAYERS_TO_USE = [15,22,29]
+INCLUDE_PRE_LAYER = False
 
 class Vgg16_pt(torch.nn.Module):
     def __init__(self, requires_grad=False):
@@ -35,18 +37,47 @@ class Vgg16_pt(torch.nn.Module):
 
         self.inds = range(11)
 
+        self.layers_to_use = LAYERS_TO_USE
+        self.include_pre_layer = INCLUDE_PRE_LAYER
+
+    @staticmethod
+    def get_fm():
+        fm = 3 if INCLUDE_PRE_LAYER else 0
+
+        if 1 in LAYERS_TO_USE:
+            fm += 64
+        if 3 in LAYERS_TO_USE:
+            fm += 64
+
+        if 6 in LAYERS_TO_USE:
+            fm += 128
+        if 8 in LAYERS_TO_USE:
+            fm += 128
+
+        if 11 in LAYERS_TO_USE:
+            fm += 256
+        if 13 in LAYERS_TO_USE:
+            fm += 256
+        if 15 in LAYERS_TO_USE:
+            fm += 256
+
+        if 22 in LAYERS_TO_USE:
+            fm += 512
+        if 29 in LAYERS_TO_USE:
+            fm += 512
+        return fm
 
     def forward_base(self,X,rand):
         inds = self.inds
 
         x = X
-        l2 = [X]
+        l2 = [X] if self.include_pre_layer else []
         for i in range(30):
             try:
                 x =  self.vgg_layers[i].forward(x)#[:,:,1:-1,1:-1]
             except:
                 pass
-            if i in [1,3,6,8,11,13,15,22,29]:
+            if i in self.layers_to_use:
                 l2.append(x)
 
         return l2
