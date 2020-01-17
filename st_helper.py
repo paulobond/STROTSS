@@ -73,7 +73,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     if use_guidance:
         gs = load_style_guidance(phi, style_path, coords[:,2:], scale=long_side)
 
-
     ### Randomly choose spatial locations to extract features from ###
     if use_pyr:
         stylized_im = syn_lap_pyr(s_pyr)
@@ -97,10 +96,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     if use_guidance:
         objective_wrapper.init_g_inds(coords, stylized_im)
 
-    print(f"**** stylized_im  {scl} 0 ****")
-    print(s_pyr)
-    print("***************")
-
     for i in range(MAX_ITER):
 
         ### zero out gradients and compute output image from pyramid ##
@@ -109,11 +104,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
             stylized_im = syn_lap_pyr(s_pyr)
         else:
             stylized_im = s_pyr[0]
-
-        if i<3:
-            print(f"**** stylized_im  {scl} 1 ****")
-            print(s_pyr)
-            print("***************")
 
         ## Dramatically Resample Large Set of Spatial Locations ##
         if i==0 or i%(RESAMPLE_FREQ*10) == 0:
@@ -130,11 +120,6 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
 
                 objective_wrapper.init_inds(z_c, z_s_all,r,ri)
 
-        if i<3:
-            print(f"**** stylized_im  {scl} 2 ****")
-            print(s_pyr)
-            print("***************")
-
         ## Subsample spatial locations to compute loss over ##
         if i==0 or i%RESAMPLE_FREQ == 0:
             objective_wrapper.shuffle_feature_inds()
@@ -146,7 +131,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         ell = objective_wrapper.eval(z_x, z_c, z_s_all, gs, 0., content_weight=content_weight,moment_weight=1.0,
                                      verbose=(i%200==0))
 
-        if i<3:
+        if i==0:
             print(f"**** stylized_im  {scl} 3 ****")
             print(s_pyr)
             print("***************")
@@ -154,7 +139,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         ell.backward()
         optimizer.step()
 
-        if i <3:
+        if i==0:
             print(f"**** stylized_im  {scl} 4 ****")
             print(s_pyr)
             print("***************")
@@ -169,10 +154,5 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
         if (i+1)%REPORT_INTERVAL == 0:
             print((i+1),ell)
             save_ind += 1
-
-        if i<3:
-            print(f"**** stylized_im  {scl} 5 ****")
-            print(s_pyr)
-            print("***************")
 
     return stylized_im, ell
