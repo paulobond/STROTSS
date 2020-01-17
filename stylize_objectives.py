@@ -99,7 +99,7 @@ class objective_class():
 
         for i in range(len(z_s)):
 
-            d = z_s[i].size(1)
+            d = z_s[i].size(1)  # length of feature vector (hypercolumn)
             z_st = z_s[i].view(1, d, -1, 1)
             x_st = z_x[i]
 
