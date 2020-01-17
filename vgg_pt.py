@@ -33,8 +33,8 @@ class Vgg16_pt(torch.nn.Module):
 
         self.inds = range(11)
 
-        self.layers_to_use = [15, 22, 29]
-        self.use_pre_layer = False
+        self.layers_to_use = [1, 3, 6, 8, 11, 13, 15, 22, 29] # [15, 22, 29]
+        self.use_pre_layer = True
 
     def get_fm(self):
         fm = 3 if self.use_pre_layer else 0
