@@ -84,10 +84,15 @@ def remd_loss(X,Y, h=None, cos_d=True, splits= [3+64+64+128+128+256+256+256+512+
 
     if d == 3:
         print("d == 3h happened")
+        print(f"Size of X (remd_loss): {X.shape}")
+        print(f"Size of Y (remd_loss): {Y.shape}")
         X = utils.rgb_to_yuv_pc(X.transpose(0,1).contiguous().view(d,-1)).transpose(0,1)
         Y = utils.rgb_to_yuv_pc(Y.transpose(0,1).contiguous().view(d,-1)).transpose(0,1)
 
     else:
+        print("d != 3")
+        print(f"Size of X (remd_loss): {X.shape}")
+        print(f"Size of Y (remd_loss): {Y.shape}")
         X = X.transpose(0,1).contiguous().view(d,-1).transpose(0,1)
         Y = Y.transpose(0,1).contiguous().view(d,-1).transpose(0,1)
 
