@@ -74,8 +74,8 @@ class objective_class():
                 moment_ell = moment_loss(x_st[:,:-2,:,:],z_st,moments=[1,2])
 
             ### Add Pallette Matching Loss ###                                        
-            content_weight_frac = 1./max(content_weight,1.)
-            moment_ell += content_weight_frac*style_loss_func(x_st[:,:3,:,:], z_st[:,:3,:,:],self.z_dist,splits=[3])[0]
+            # content_weight_frac = 1./max(content_weight,1.)
+            # moment_ell += content_weight_frac*style_loss_func(x_st[:,:3,:,:], z_st[:,:3,:,:],self.z_dist,splits=[3])[0]
 
 
             ### Combine Terms and Normalize ###
