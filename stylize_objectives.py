@@ -80,6 +80,7 @@ class objective_class():
 
             ### Combine Terms and Normalize ###
             ell_style = remd_loss +moment_weight*moment_ell
+            ell_style = moment_weight*moment_ell
             style_weight = 1.0 + moment_weight
             final_loss += (content_weight*ell_content+ell_style)/(content_weight+style_weight)
             # final_loss = ell_style
