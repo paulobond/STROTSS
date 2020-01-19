@@ -68,10 +68,10 @@ class objective_class():
 
             ### Compute Moment Loss (constrains magnitude of features ###
             moment_ell = 0.
-            # if gz.sum() > 0.:
-            #     moment_ell = moment_loss(torch.cat([x_st,gx_st],2)[:,:-2,:,:],torch.cat([z_st,gz],2),moments=[1,2])
-            # else:
-            #     moment_ell = moment_loss(x_st[:,:-2,:,:],z_st,moments=[1,2])
+            if gz.sum() > 0.:
+                moment_ell = moment_loss(torch.cat([x_st,gx_st],2)[:,:-2,:,:],torch.cat([z_st,gz],2),moments=[1,2])
+            else:
+                moment_ell = moment_loss(x_st[:,:-2,:,:],z_st,moments=[1,2])
 
             ### Add Pallette Matching Loss ###                                        
             content_weight_frac = 1./max(content_weight,1.)
@@ -81,8 +81,9 @@ class objective_class():
             ### Combine Terms and Normalize ###
             ell_style = remd_loss +moment_weight*moment_ell
             style_weight = 1.0 + moment_weight
-            final_loss += (content_weight*ell_content+ell_style)/(content_weight+style_weight)
+            # final_loss += (content_weight*ell_content+ell_style)/(content_weight+style_weight)
             # final_loss = ell_style
+            final_loss = ell_content
         
         return final_loss/len(self.rand_ixx.keys())
 
