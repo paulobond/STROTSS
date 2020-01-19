@@ -24,7 +24,7 @@ def style_transfer(stylized_im, content_im, style_path, output_path, scl, long_s
     MAX_ITER = 250
     save_ind = 0
 
-    use_pyr=True
+    use_pyr=False
 
     temp_name = './'+output_path.split('/')[-1].split('.')[0]+'_temp.png'
 
