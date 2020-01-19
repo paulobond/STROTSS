@@ -74,16 +74,16 @@ class objective_class():
                 moment_ell = moment_loss(x_st[:,:-2,:,:],z_st,moments=[1,2])
 
             ### Add Pallette Matching Loss ###                                        
-            content_weight_frac = 1./max(content_weight,1.)
-            moment_ell += content_weight_frac*style_loss_func(x_st[:,:3,:,:], z_st[:,:3,:,:],self.z_dist,splits=[3])[0]
+            # content_weight_frac = 1./max(content_weight,1.)
+            # moment_ell += content_weight_frac*style_loss_func(x_st[:,:3,:,:], z_st[:,:3,:,:],self.z_dist,splits=[3])[0]
 
 
             ### Combine Terms and Normalize ###
             ell_style = remd_loss +moment_weight*moment_ell
             style_weight = 1.0 + moment_weight
-            # final_loss += (content_weight*ell_content+ell_style)/(content_weight+style_weight)
+            final_loss += (content_weight*ell_content+ell_style)/(content_weight+style_weight)
             # final_loss = ell_style
-            final_loss = ell_content
+            # final_loss = ell_content
         
         return final_loss/len(self.rand_ixx.keys())
 
