@@ -44,6 +44,7 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
         canvas = F.upsample(content_im,(content_im.size(2)//2,content_im.size(3)//2),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
 
     ### Initialize by zeroing out all but highest and lowest levels of Laplaccian Pyramid ###
+    stylized_im = Variable(content_im_mean + lap)
     if scl == 1:
         if 1:
             stylized_im = Variable(content_im_mean+lap)
