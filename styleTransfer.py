@@ -21,46 +21,50 @@ def run_st(content_path, style_path, content_weight, max_scl, coords, use_guidan
 
     content_im_big = utils.to_device(Variable(load_path_for_pytorch(content_path,512,force_scale=True).unsqueeze(0)))
 
-    for scl in range(1,max_scl):
+    content_weight = 0.5
+    scl = max_scl
 
-        long_side = smll_sz*(2**(scl-1))
-        lr = 2e-3
 
-        ### Load Style and Content Image ###
-        content_im = utils.to_device(Variable(load_path_for_pytorch(content_path,long_side,force_scale=True).unsqueeze(0)))
-        content_im_mean = utils.to_device(Variable(load_path_for_pytorch(style_path,long_side,force_scale=True).unsqueeze(0))).mean(2,keepdim=True).mean(3,keepdim=True)
-        
-        ### Compute bottom level of laplaccian pyramid for content image at current scale ###
-        lap = content_im.clone()-F.upsample(F.upsample(content_im,(content_im.size(2)//2,content_im.size(3)//2),mode='bilinear'),(content_im.size(2),content_im.size(3)),mode='bilinear')
-        nz = torch.normal(lap*0.,0.1)
+    # for scl in range(1,max_scl):
 
-        canvas = F.upsample(torch.clamp(lap,-0.5,0.5),(content_im_big.size(2),content_im_big.size(3)),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
+    long_side = smll_sz*(2**(scl-1))
+    lr = 2e-3
 
-        if scl == 1:
-            canvas = F.upsample(content_im,(content_im.size(2)//2,content_im.size(3)//2),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
+    ### Load Style and Content Image ###
+    content_im = utils.to_device(Variable(load_path_for_pytorch(content_path,long_side,force_scale=True).unsqueeze(0)))
+    content_im_mean = utils.to_device(Variable(load_path_for_pytorch(style_path,long_side,force_scale=True).unsqueeze(0))).mean(2,keepdim=True).mean(3,keepdim=True)
 
-        ### Initialize by zeroing out all but highest and lowest levels of Laplaccian Pyramid ###
-        if scl == 1:
-            if 1:
-                stylized_im = Variable(content_im_mean+lap)
-            else:
-                stylized_im = Variable(content_im.data)
+    ### Compute bottom level of laplaccian pyramid for content image at current scale ###
+    lap = content_im.clone()-F.upsample(F.upsample(content_im,(content_im.size(2)//2,content_im.size(3)//2),mode='bilinear'),(content_im.size(2),content_im.size(3)),mode='bilinear')
+    nz = torch.normal(lap*0.,0.1)
 
-        ### Otherwise bilinearly upsample previous scales output and add back bottom level of Laplaccian pyramid for current scale of content image ###
-        if scl > 1 and scl < max_scl-1:
-            stylized_im = F.upsample(stylized_im.clone(),(content_im.size(2),content_im.size(3)),mode='bilinear')+lap
+    canvas = F.upsample(torch.clamp(lap,-0.5,0.5),(content_im_big.size(2),content_im_big.size(3)),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
 
-        if scl > 3:
-            stylized_im = F.upsample(stylized_im.clone(),(content_im.size(2),content_im.size(3)),mode='bilinear')
-            lr = 1e-3
+    if scl == 1:
+        canvas = F.upsample(content_im,(content_im.size(2)//2,content_im.size(3)//2),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
 
-        ### Style Transfer at this scale ###
-        stylized_im, final_loss = style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, 0., use_guidance=use_guidance, coords=coords, content_weight=content_weight, lr=lr, regions=regions)
+    ### Initialize by zeroing out all but highest and lowest levels of Laplaccian Pyramid ###
+    if scl == 1:
+        if 1:
+            stylized_im = Variable(content_im_mean+lap)
+        else:
+            stylized_im = Variable(content_im.data)
 
-        canvas = F.upsample(torch.clamp(stylized_im,-0.5,0.5),(content_im.size(2),content_im.size(3)),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
-        
-        ### Decrease Content Weight for next scale ###
-        content_weight = content_weight/2.0
+    ### Otherwise bilinearly upsample previous scales output and add back bottom level of Laplaccian pyramid for current scale of content image ###
+    if scl > 1 and scl < max_scl-1:
+        stylized_im = F.upsample(stylized_im.clone(),(content_im.size(2),content_im.size(3)),mode='bilinear')+lap
+
+    if scl > 3:
+        stylized_im = F.upsample(stylized_im.clone(),(content_im.size(2),content_im.size(3)),mode='bilinear')
+        lr = 1e-3
+
+    ### Style Transfer at this scale ###
+    stylized_im, final_loss = style_transfer(stylized_im, content_im, style_path, output_path, scl, long_side, 0., use_guidance=use_guidance, coords=coords, content_weight=content_weight, lr=lr, regions=regions)
+
+    canvas = F.upsample(torch.clamp(stylized_im,-0.5,0.5),(content_im.size(2),content_im.size(3)),mode='bilinear')[0].data.cpu().numpy().transpose(1,2,0)
+
+    ### Decrease Content Weight for next scale ###
+    content_weight = content_weight/2.0
 
     print("Finished in: ", int(time.time()-start), 'Seconds')
     print('Final Loss:', final_loss)
